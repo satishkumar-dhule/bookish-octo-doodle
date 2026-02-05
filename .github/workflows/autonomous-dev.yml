@@ -42,16 +42,20 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
-      - name: 🤖 Setup AI CLI (Mock)
+      - name: 🤖 Install OpenCode AI CLI
         run: |
-          # Note: OpenClaw/OpenCode are hypothetical for this demo
-          # In production, replace with your actual AI CLI tool (e.g., anthropic, openai, etc.)
-          # Creating mock openclaw command for demo purposes
-          echo '#!/bin/bash' > /tmp/openclaw
-          echo 'echo "{\"type\":\"text\",\"part\":{\"text\":\"Mock AI response\"}}"' >> /tmp/openclaw
-          chmod +x /tmp/openclaw
-          sudo mv /tmp/openclaw /usr/local/bin/openclaw
-          openclaw --version || echo "Mock AI CLI installed for demo"
+          # Install the real opencode-ai package
+          npm install -g opencode-ai
+
+          # Verify installation
+          opencode --version
+
+          # Create openclaw alias pointing to opencode for backward compatibility
+          echo '#!/bin/bash' | sudo tee /usr/local/bin/openclaw > /dev/null
+          echo 'exec opencode "$@"' | sudo tee -a /usr/local/bin/openclaw > /dev/null
+          sudo chmod +x /usr/local/bin/openclaw
+
+          echo "✅ OpenCode AI installed successfully"
 
       - name: 💡 Create Idea from Vibe
         id: create_idea
