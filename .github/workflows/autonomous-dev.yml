@@ -94,8 +94,8 @@ jobs:
       - name: 💾 Commit Progress
         if: always()
         run: |
-          git config --local user.email "bot@autonomous-dev.local"
-          git config --local user.name "Autonomous Dev Bot"
+          git config --local user.email "satishkumar.dhule@gmail.com"
+          git config --local user.name "satishkumar-dhule"
 
           # Stage all changes
           git add -A
