@@ -17,7 +17,7 @@ on:
         default: false
 
 jobs:
-  autonomous-work:
+  autonomous_work:
     name: 🚀 Autonomous Dev Session
     runs-on: ubuntu-latest
     timeout-minutes: 25  # 25-minute timeout
@@ -138,9 +138,9 @@ jobs:
 
   cleanup:
     name: 🧹 Cleanup
-    needs: [autonomous-work]
+    needs: [autonomous_work]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Check Runner Status
-        run: echo "Session completed with status: ${{ needs['autonomous-work'].result }}"
+        run: echo "Session completed with status: ${{ needs.autonomous_work.result }}"
