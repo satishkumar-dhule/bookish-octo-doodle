@@ -87,7 +87,7 @@ jobs:
 
       - name: 🎯 Run Autonomous Orchestrator (LangGraph + Failover)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHTOKEN}}
           MODEL: ${{ vars.MODEL || 'opencode/gpt-5-nano' }}  # OpenCode models via OpenClaw
           OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL || 'opencode/gpt-5-nano' }}  # Fallback
           IDEA_ID: ${{ steps.create_idea.outputs.idea_id || inputs.idea_id }}
@@ -119,7 +119,7 @@ jobs:
       - name: 📊 Update GitHub Issues
         if: always()
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHTOKEN}}
         run: node scripts/utils/issue-tracker.js sync
 
       - name: 📈 Generate Summary
