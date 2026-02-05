@@ -46,8 +46,10 @@ jobs:
         run: |
           # Install openclaw CLI
           npm install -g openclaw
-          # Or: curl -sSL https://openclaw.dev/install.sh | bash
-          openclaw --version
+          # Add npm global bin to PATH
+          echo "$(npm bin -g)" >> $GITHUB_PATH
+          # Verify installation
+          npx openclaw --version
 
       - name: 💡 Create Idea from Vibe
         id: create_idea
