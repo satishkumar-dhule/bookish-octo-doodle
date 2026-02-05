@@ -42,14 +42,16 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
-      - name: 🤖 Install OpenClaw CLI
+      - name: 🤖 Setup AI CLI (Mock)
         run: |
-          # Install openclaw CLI
-          npm install -g openclaw
-          # Add npm global bin to PATH
-          echo "$(npm bin -g)" >> $GITHUB_PATH
-          # Verify installation
-          npx openclaw --version
+          # Note: OpenClaw/OpenCode are hypothetical for this demo
+          # In production, replace with your actual AI CLI tool (e.g., anthropic, openai, etc.)
+          # Creating mock openclaw command for demo purposes
+          echo '#!/bin/bash' > /tmp/openclaw
+          echo 'echo "{\"type\":\"text\",\"part\":{\"text\":\"Mock AI response\"}}"' >> /tmp/openclaw
+          chmod +x /tmp/openclaw
+          sudo mv /tmp/openclaw /usr/local/bin/openclaw
+          openclaw --version || echo "Mock AI CLI installed for demo"
 
       - name: 💡 Create Idea from Vibe
         id: create_idea
