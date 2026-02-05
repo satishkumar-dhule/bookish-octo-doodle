@@ -1,0 +1,14 @@
+node_modules/
+*.log
+.env
+.DS_Store
+
+# Keep state structure but not sessions
+state/agent-outputs/*
+!state/agent-outputs/.gitkeep
+
+# Don't track in-progress or completed ideas by default
+ideas/in-progress/*
+ideas/completed/*
+!ideas/in-progress/.gitkeep
+!ideas/completed/.gitkeep

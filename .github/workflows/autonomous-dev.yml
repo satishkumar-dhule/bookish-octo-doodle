@@ -1,0 +1,146 @@
+name: 🤖 Autonomous Development
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch:
+    inputs:
+      idea_id:
+        description: 'Specific idea ID to work on'
+        required: false
+      vibe:
+        description: 'Quick idea description (creates new idea automatically)'
+        required: false
+      force_new:
+        description: 'Start fresh (ignore resume state)'
+        type: boolean
+        default: false
+
+jobs:
+  autonomous-work:
+    name: 🚀 Autonomous Dev Session
+    runs-on: ubuntu-latest
+    timeout-minutes: 25  # 25-minute timeout
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: dev  # Always work on dev branch
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🤖 Install OpenClaw CLI
+        run: |
+          # Install openclaw CLI
+          npm install -g openclaw
+          # Or: curl -sSL https://openclaw.dev/install.sh | bash
+          openclaw --version
+
+      - name: 💡 Create Idea from Vibe
+        id: create_idea
+        if: ${{ inputs.vibe != '' }}
+        run: |
+          echo "🎨 Creating idea from vibe: ${{ inputs.vibe }}"
+          OUTPUT_JSON=true node scripts/create-idea.js "${{ inputs.vibe }}" > /tmp/idea-output.txt
+
+          # Extract JSON output
+          IDEA_JSON=$(tail -n 1 /tmp/idea-output.txt)
+          IDEA_ID=$(echo $IDEA_JSON | jq -r '.ideaId')
+
+          echo "idea_id=$IDEA_ID" >> $GITHUB_OUTPUT
+          echo "✅ Created idea with ID: $IDEA_ID"
+
+      - name: 🔍 Resume from Last State
+        id: resume
+        run: |
+          if [ "${{ inputs.force_new }}" == "true" ]; then
+            echo "🆕 Starting fresh session"
+            echo "resume=false" >> $GITHUB_OUTPUT
+          elif [ -f "state/current-session.json" ]; then
+            echo "📂 Resuming from previous session"
+            echo "resume=true" >> $GITHUB_OUTPUT
+          else
+            echo "🆕 No previous state found"
+            echo "resume=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🎯 Run Autonomous Orchestrator (LangGraph + Failover)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODEL: ${{ vars.MODEL || 'opencode/gpt-5-nano' }}  # OpenCode models via OpenClaw
+          OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL || 'opencode/gpt-5-nano' }}  # Fallback
+          IDEA_ID: ${{ steps.create_idea.outputs.idea_id || inputs.idea_id }}
+          RESUME: ${{ steps.resume.outputs.resume }}
+          TIMEOUT_MINUTES: 23  # Leave 2min buffer for cleanup
+        run: node scripts/orchestrator-with-failover.js
+
+      - name: 💾 Commit Progress
+        if: always()
+        run: |
+          git config --local user.email "bot@autonomous-dev.local"
+          git config --local user.name "Autonomous Dev Bot"
+
+          # Stage all changes
+          git add -A
+
+          # Check if there are changes
+          if ! git diff --staged --quiet; then
+            # Get milestone from state
+            MILESTONE=$(node -e "const s=require('./state/current-session.json');console.log(s.milestone||'Progress update')")
+
+            git commit -m "🤖 Auto: $MILESTONE [skip ci]"
+            git push origin dev
+            echo "✅ Committed and pushed to dev"
+          else
+            echo "⏭️ No changes to commit"
+          fi
+
+      - name: 📊 Update GitHub Issues
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/utils/issue-tracker.js sync
+
+      - name: 📈 Generate Summary
+        if: always()
+        run: |
+          echo "## 🤖 Autonomous Dev Session Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "state/current-session.json" ]; then
+            node -e "
+              const s = require('./state/current-session.json');
+              console.log(\`**Idea:** \${s.idea_id || 'N/A'}\`);
+              console.log(\`**Status:** \${s.status || 'unknown'}\`);
+              console.log(\`**Progress:** \${s.progress || 0}%\`);
+              console.log(\`**Milestone:** \${s.milestone || 'N/A'}\`);
+              console.log(\`**Next Step:** \${s.next_step || 'TBD'}\`);
+            " >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No session state found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+  cleanup:
+    name: 🧹 Cleanup
+    needs: [autonomous-work]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Runner Status
+        run: echo "Session completed with status: ${{ needs.autonomous-work.result }}"
