@@ -1,0 +1,84 @@
+{
+  "agents": {
+    "planner": {
+      "role": "Software Architect",
+      "responsibilities": [
+        "Analyze idea requirements",
+        "Design implementation approach",
+        "Break down into milestones",
+        "Identify dependencies",
+        "Flag unclear requirements"
+      ],
+      "output_format": "structured JSON plan",
+      "autonomy_level": "high",
+      "questions_allowed": true
+    },
+    "coder": {
+      "role": "Software Engineer",
+      "responsibilities": [
+        "Implement code based on plan",
+        "Follow best practices",
+        "Write clean, maintainable code",
+        "Add inline comments",
+        "Handle edge cases"
+      ],
+      "output_format": "complete file contents",
+      "autonomy_level": "medium",
+      "questions_allowed": false,
+      "parallel_instances": 3
+    },
+    "reviewer": {
+      "role": "Senior Code Reviewer",
+      "responsibilities": [
+        "Review code quality",
+        "Check for bugs",
+        "Verify implementation matches plan",
+        "Suggest improvements",
+        "Approve or request changes"
+      ],
+      "output_format": "review report with approval",
+      "autonomy_level": "high",
+      "questions_allowed": true
+    }
+  },
+  "workflow": {
+    "phases": [
+      {
+        "name": "planning",
+        "agents": ["planner"],
+        "parallel": false,
+        "timeout_minutes": 5,
+        "can_skip": false
+      },
+      {
+        "name": "implementing",
+        "agents": ["coder", "coder", "coder"],
+        "parallel": true,
+        "timeout_minutes": 15,
+        "can_skip": false
+      },
+      {
+        "name": "reviewing",
+        "agents": ["reviewer"],
+        "parallel": false,
+        "timeout_minutes": 3,
+        "can_skip": false
+      },
+      {
+        "name": "testing",
+        "agents": [],
+        "parallel": false,
+        "timeout_minutes": 2,
+        "can_skip": true
+      }
+    ]
+  },
+  "autonomy_rules": {
+    "min_questions": 0,
+    "max_questions_per_session": 3,
+    "auto_proceed_if_confidence_above": 0.8,
+    "create_issue_for_critical_decisions": true,
+    "commit_frequency": "per_milestone",
+    "branch_strategy": "dev_only"
+  }
+}

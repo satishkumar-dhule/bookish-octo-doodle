@@ -1,0 +1,33 @@
+{
+  "description": "OpenCode models via OpenClaw CLI for autonomous development",
+  "cli": "openclaw",
+  "models": {
+    "planner": {
+      "provider": "openclaw",
+      "model": "opencode/gpt-5-nano",
+      "description": "Fast planning agent using OpenCode's GPT-5-nano model",
+      "context_window": 8000,
+      "cost": "free"
+    },
+    "coder": {
+      "provider": "openclaw",
+      "model": "opencode/codellama-7b",
+      "description": "Code generation specialist using OpenCode's CodeLlama model",
+      "context_window": 16000,
+      "cost": "free"
+    },
+    "reviewer": {
+      "provider": "openclaw",
+      "model": "opencode/gpt-5-nano",
+      "description": "Code review agent using OpenCode's GPT-5-nano model",
+      "context_window": 8000,
+      "cost": "free"
+    }
+  },
+  "fallback_model": "opencode/gpt-5-nano",
+  "parallel_limit": 3,
+  "rate_limits": {
+    "requests_per_minute": 60,
+    "concurrent_requests": 5
+  }
+}

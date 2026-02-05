@@ -1,0 +1,34 @@
+{
+  "name": "autonomous-dev-system",
+  "version": "1.0.0",
+  "description": "AI-powered autonomous development system with GitHub Actions and OpenCode CLI",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/orchestrator-with-failover.js",
+    "start:simple": "node scripts/orchestrator.js",
+    "start:langgraph": "node scripts/orchestrator-langgraph.js",
+    "bootstrap": "node scripts/bootstrap.js",
+    "idea": "node scripts/create-idea.js",
+    "idea:interactive": "node scripts/create-idea.js --interactive",
+    "test": "echo 'No tests yet'"
+  },
+  "keywords": [
+    "ai",
+    "automation",
+    "github-actions",
+    "autonomous",
+    "opencode",
+    "agents",
+    "development"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.30",
+    "@langchain/langgraph": "^0.2.29"
+  },
+  "devDependencies": {}
+}
