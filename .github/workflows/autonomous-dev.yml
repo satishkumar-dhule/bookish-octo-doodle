@@ -71,6 +71,18 @@ jobs:
           echo "idea_id=$IDEA_ID" >> $GITHUB_OUTPUT
           echo "✅ Created idea with ID: $IDEA_ID"
 
+      - name: 💾 Commit New Idea
+        if: ${{ inputs.vibe != '' }}
+        run: |
+          git config --local user.email "satishkumar.dhule@gmail.com"
+          git config --local user.name "satishkumar-dhule"
+          git add ideas/backlog/
+          if ! git diff --staged --quiet; then
+            git commit -m "🤖 Auto: Add idea from vibe [skip ci]"
+            git push origin dev
+            echo "✅ Idea committed and pushed"
+          fi
+
       - name: 🔍 Resume from Last State
         id: resume
         run: |
