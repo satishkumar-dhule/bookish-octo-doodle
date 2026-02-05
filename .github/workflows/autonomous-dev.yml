@@ -57,6 +57,34 @@ jobs:
 
           echo "✅ OpenCode AI installed successfully"
 
+      - name: 🌐 Setup Cloudflared
+        uses: cloudflare/cloudflared-action@1.0.0
+        with:
+          version: 'latest'
+
+      - name: 🚀 Start OpenCode Web Server
+        run: |
+          # Start opencode web in background
+          nohup opencode web --port 3000 > /tmp/opencode-web.log 2>&1 &
+          echo $! > /tmp/opencode-web.pid
+
+          # Wait for server to start
+          sleep 5
+
+          # Start cloudflared tunnel in background
+          nohup cloudflared tunnel --url http://localhost:3000 > /tmp/cloudflared.log 2>&1 &
+          echo $! > /tmp/cloudflared.pid
+
+          # Wait for tunnel to establish
+          sleep 5
+
+          # Extract public URL from logs
+          TUNNEL_URL=$(grep -o 'https://[^[:space:]]*\.trycloudflare\.com' /tmp/cloudflared.log | head -1)
+          echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+          echo "🌐 OpenCode Web accessible at: $TUNNEL_URL"
+          echo "OPENCODE_WEB_URL=$TUNNEL_URL" >> $GITHUB_ENV
+        id: opencode_web
+
       - name: 💡 Create Idea from Vibe
         id: create_idea
         if: ${{ inputs.vibe != '' }}
@@ -82,6 +110,11 @@ jobs:
             git push origin dev
             echo "✅ Idea committed and pushed"
           fi
+
+      - name: 🔄 Pull Latest Changes
+        run: |
+          git pull origin dev --rebase
+          echo "✅ Latest changes pulled"
 
       - name: 🔍 Resume from Last State
         id: resume
@@ -140,6 +173,11 @@ jobs:
           echo "## 🤖 Autonomous Dev Session Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
+          if [ -n "${{ env.OPENCODE_WEB_URL }}" ]; then
+            echo "🌐 **OpenCode Web**: [${{ env.OPENCODE_WEB_URL }}](${{ env.OPENCODE_WEB_URL }})" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
           if [ -f "state/current-session.json" ]; then
             node -e "
               const s = require('./state/current-session.json');
@@ -155,6 +193,21 @@ jobs:
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+      - name: 🛑 Stop OpenCode Web & Cloudflared
+        if: always()
+        run: |
+          # Stop cloudflared tunnel
+          if [ -f /tmp/cloudflared.pid ]; then
+            kill $(cat /tmp/cloudflared.pid) 2>/dev/null || true
+            echo "✅ Cloudflared tunnel stopped"
+          fi
+
+          # Stop opencode web server
+          if [ -f /tmp/opencode-web.pid ]; then
+            kill $(cat /tmp/opencode-web.pid) 2>/dev/null || true
+            echo "✅ OpenCode web server stopped"
+          fi
 
   cleanup:
     name: 🧹 Cleanup
