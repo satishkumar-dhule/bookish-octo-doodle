@@ -16,21 +16,21 @@ import { spawn } from 'child_process';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MODEL_HIERARCHY = {
-  // Primary models with fallbacks - using real Claude models
+  // Primary models with fallbacks - using FREE opencode models (matching reference project)
   planner: [
-    { model: 'claude-3-5-sonnet-20241022', priority: 1, speed: 'fast', quality: 'excellent' },
-    { model: 'claude-3-5-haiku-20241022', priority: 2, speed: 'very-fast', quality: 'good' },
-    { model: 'claude-3-opus-20240229', priority: 3, speed: 'medium', quality: 'excellent' }
+    { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
+    { model: 'opencode/gpt-4o-mini', priority: 2, speed: 'fast', quality: 'very-good' },
+    { model: 'opencode/claude-3-haiku-20240307', priority: 3, speed: 'very-fast', quality: 'good' }
   ],
   coder: [
-    { model: 'claude-3-5-sonnet-20241022', priority: 1, speed: 'fast', quality: 'excellent' },
-    { model: 'claude-3-5-haiku-20241022', priority: 2, speed: 'very-fast', quality: 'good' },
-    { model: 'claude-3-opus-20240229', priority: 3, speed: 'medium', quality: 'excellent' }
+    { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
+    { model: 'opencode/gpt-4o-mini', priority: 2, speed: 'fast', quality: 'very-good' },
+    { model: 'opencode/claude-3-haiku-20240307', priority: 3, speed: 'very-fast', quality: 'good' }
   ],
   reviewer: [
-    { model: 'claude-3-5-sonnet-20241022', priority: 1, speed: 'fast', quality: 'excellent' },
-    { model: 'claude-3-5-haiku-20241022', priority: 2, speed: 'very-fast', quality: 'good' },
-    { model: 'claude-3-opus-20240229', priority: 3, speed: 'medium', quality: 'excellent' }
+    { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
+    { model: 'opencode/gpt-4o-mini', priority: 2, speed: 'fast', quality: 'very-good' },
+    { model: 'opencode/claude-3-haiku-20240307', priority: 3, speed: 'very-fast', quality: 'good' }
   ]
 };
 

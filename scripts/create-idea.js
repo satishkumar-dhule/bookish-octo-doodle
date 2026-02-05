@@ -65,7 +65,7 @@ Return ONLY a valid JSON object with this structure:
 
     const proc = spawn('opencode', [
       'run',
-      '--model', 'claude-3-5-sonnet-20241022',
+      '--model', 'opencode/gpt-5-nano',
       '--format', 'json',
       prompt
     ], {
