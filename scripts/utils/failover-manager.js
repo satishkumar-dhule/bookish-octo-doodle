@@ -16,21 +16,21 @@ import { spawn } from 'child_process';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MODEL_HIERARCHY = {
-  // Primary models with fallbacks
+  // Primary models with fallbacks - using real Claude models
   planner: [
-    { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
-    { model: 'opencode/mixtral-8x7b', priority: 2, speed: 'slow', quality: 'excellent' },
-    { model: 'opencode/gpt-4-turbo', priority: 3, speed: 'medium', quality: 'very-good' }
+    { model: 'claude-3-5-sonnet-20241022', priority: 1, speed: 'fast', quality: 'excellent' },
+    { model: 'claude-3-5-haiku-20241022', priority: 2, speed: 'very-fast', quality: 'good' },
+    { model: 'claude-3-opus-20240229', priority: 3, speed: 'medium', quality: 'excellent' }
   ],
   coder: [
-    { model: 'opencode/codellama-7b', priority: 1, speed: 'fast', quality: 'good' },
-    { model: 'opencode/codellama-13b', priority: 2, speed: 'medium', quality: 'very-good' },
-    { model: 'opencode/gpt-5-nano', priority: 3, speed: 'fast', quality: 'acceptable' }
+    { model: 'claude-3-5-sonnet-20241022', priority: 1, speed: 'fast', quality: 'excellent' },
+    { model: 'claude-3-5-haiku-20241022', priority: 2, speed: 'very-fast', quality: 'good' },
+    { model: 'claude-3-opus-20240229', priority: 3, speed: 'medium', quality: 'excellent' }
   ],
   reviewer: [
-    { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
-    { model: 'opencode/mixtral-8x7b', priority: 2, speed: 'slow', quality: 'excellent' },
-    { model: 'opencode/gpt-4-turbo', priority: 3, speed: 'medium', quality: 'very-good' }
+    { model: 'claude-3-5-sonnet-20241022', priority: 1, speed: 'fast', quality: 'excellent' },
+    { model: 'claude-3-5-haiku-20241022', priority: 2, speed: 'very-fast', quality: 'good' },
+    { model: 'claude-3-opus-20240229', priority: 3, speed: 'medium', quality: 'excellent' }
   ]
 };
 
@@ -242,8 +242,10 @@ export class FailoverManager {
     return new Promise((resolve, reject) => {
       let output = '';
       let error = '';
+      let resolved = false;
 
-      const proc = spawn('openclaw', [
+      // Use 'opencode' command (openclaw is an alias)
+      const proc = spawn('opencode', [
         'run',
         '--model', model,
         '--format', 'json',
@@ -254,8 +256,11 @@ export class FailoverManager {
       });
 
       const timer = setTimeout(() => {
-        proc.kill('SIGTERM');
-        reject(new Error(`Timeout after ${timeout}ms`));
+        if (!resolved) {
+          resolved = true;
+          proc.kill('SIGTERM');
+          reject(new Error(`Timeout after ${timeout}ms`));
+        }
       }, timeout);
 
       proc.stdout.on('data', (data) => { output += data.toString(); });
@@ -263,21 +268,27 @@ export class FailoverManager {
 
       proc.on('close', (code) => {
         clearTimeout(timer);
-        if (code === 0 && output) {
-          try {
-            const parsed = this.parseOutput(output);
-            resolve(parsed);
-          } catch (parseError) {
-            reject(new Error(`Parse error: ${parseError.message}`));
+        if (!resolved) {
+          resolved = true;
+          if (output) {
+            try {
+              const parsed = this.parseOutput(output);
+              resolve(parsed);
+            } catch (parseError) {
+              reject(new Error(`Parse error: ${parseError.message}`));
+            }
+          } else {
+            reject(new Error(error || `Exit code ${code}`));
           }
-        } else {
-          reject(new Error(error || `Exit code ${code}`));
         }
       });
 
       proc.on('error', (err) => {
         clearTimeout(timer);
-        reject(err);
+        if (!resolved) {
+          resolved = true;
+          reject(err);
+        }
       });
     });
   }

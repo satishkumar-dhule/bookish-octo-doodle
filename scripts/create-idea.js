@@ -63,9 +63,9 @@ Return ONLY a valid JSON object with this structure:
     let output = '';
     let error = '';
 
-    const proc = spawn('openclaw', [
+    const proc = spawn('opencode', [
       'run',
-      '--model', 'opencode/gpt-5-nano',
+      '--model', 'claude-3-5-sonnet-20241022',
       '--format', 'json',
       prompt
     ], {
