@@ -57,10 +57,13 @@ jobs:
 
           echo "✅ OpenCode AI installed successfully"
 
-      - name: 🌐 Setup Cloudflared
-        uses: cloudflare/cloudflared-action@1.0.0
-        with:
-          version: 'latest'
+      - name: 🌐 Install Cloudflared
+        run: |
+          # Download and install cloudflared
+          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared-linux-amd64.deb
+          cloudflared --version
+          echo "✅ Cloudflared installed"
 
       - name: 🚀 Start OpenCode Web Server
         run: |
