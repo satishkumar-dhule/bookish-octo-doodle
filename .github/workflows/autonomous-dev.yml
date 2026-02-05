@@ -143,4 +143,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Runner Status
-        run: echo "Session completed with status: ${{ needs.autonomous-work.result }}"
+        run: echo "Session completed with status: ${{ needs['autonomous-work'].result }}"
