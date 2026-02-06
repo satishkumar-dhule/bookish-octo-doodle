@@ -1,0 +1,156 @@
+{
+  "ideaId": "001-example-feature",
+  "ideaContent": "# Add Health Check Endpoint\n\n## Description\nAdd a `/health` endpoint that returns system status\n\n## Context\nFor monitoring and load balancer health checks\n\n## Acceptance Criteria\n- [ ] GET /health endpoint returns 200 OK\n- [ ] Response includes: status, timestamp, version, uptime\n- [ ] Endpoint is unauthenticated\n- [ ] Response time < 50ms\n\n## Technical Notes\n- Return JSON: `{ \"status\": \"ok\", \"timestamp\": \"...\", \"version\": \"1.0\", \"uptime\": 12345 }`\n- Add to main router\n- No database calls (fast response)\n\n## Files Involved\n- `server/routes/health.js` (new)\n- `server/index.js` (update)\n\n## Priority\nMedium\n\n## Complexity\nLow\n",
+  "sessionId": "session-1770353360633",
+  "phase": "implementing",
+  "timeoutAt": 1770354740633,
+  "agentOutputs": {
+    "analysis": {
+      "understanding": "You want a lightweight, unauthenticated /health endpoint for liveness/readiness checks. It should return a JSON payload containing status, timestamp, version, and uptime, with a target response time under 50ms. The endpoint should be added under the main router, with no database calls, and suitable for use by monitoring and load balancers.",
+      "complexity": "low",
+      "estimated_milestones": 3,
+      "requires_planning": true,
+      "confidence": 0.9,
+      "risks": [
+        "Source of version information may vary (package.json vs. environment variable); ensure the chosen source is consistent across environments.",
+        "Uptime calculation can differ in multi-process/clustering or containerized environments; decide whether to use process.uptime() per-process or a global uptime.",
+        "Ensuring <50ms latency under production load may be challenging; consider keeping the endpoint extremely lightweight and avoiding any I/O or crypto operations.",
+        "If the deployment regenerates code or dependencies at runtime, ensure the health endpoint still has access to the correct version value.",
+        "Path and routing conventions may vary with existing frameworks; ensure mounting health middleware does not require authentication or existing auth middleware."
+      ],
+      "questions": [
+        "What should be the source of the version value (package.json, environment variable, or hardcoded)?",
+        "Is process.uptime() per-process acceptable for uptime, or do you prefer a global uptime across clustered workers?"
+      ],
+      "approach": "Implement a minimal Express router in server/routes/health.js that handles GET / and responds with { status: 'ok', timestamp: '2026-02-06T12:34:56.789Z', version: '1.0', uptime: 12345 }. Mount this router in server/index.js under /health so the endpoint is available at /health. Include a lightweight middleware to measure response time and expose it (e.g., X-Response-Time header) to help verify the <50ms target. Ensure no authentication middleware runs for this route. Keep the implementation free of database calls and heavy computations to guarantee fast response."
+    }
+  },
+  "totalMilestones": 5,
+  "userQuestion": null,
+  "needsUserInput": false,
+  "degradedMode": false,
+  "resourceUsage": {
+    "memory": {
+      "heapUsed": 12,
+      "heapTotal": 15,
+      "external": 2,
+      "rss": 62,
+      "percentage": 81
+    },
+    "cpu": {
+      "user": 416,
+      "system": 61
+    },
+    "disk": {
+      "total": "145G",
+      "used": "54G",
+      "available": "91G",
+      "percentage": 38
+    },
+    "healthy": true
+  },
+  "plan": {
+    "milestones": [
+      {
+        "name": "Milestone 1",
+        "description": "Scaffold health endpoint and route file",
+        "files": {
+          "create": [
+            "server/routes/health.js"
+          ],
+          "modify": [],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "tests/health.scaffold.test.js (optional scaffold test)"
+        ],
+        "rollback": "Remove server/routes/health.js"
+      },
+      {
+        "name": "Milestone 2",
+        "description": "Implement GET /health handler returning status JSON",
+        "files": {
+          "create": [],
+          "modify": [
+            "server/routes/health.js"
+          ],
+          "delete": []
+        },
+        "dependencies": [
+          "Milestone 1"
+        ],
+        "tests": [
+          "tests/health.endpoint.test.js"
+        ],
+        "rollback": "Revert changes to server/routes/health.js"
+      },
+      {
+        "name": "Milestone 3",
+        "description": "Wire health route into main router (unauthenticated)",
+        "files": {
+          "create": [],
+          "modify": [
+            "server/index.js"
+          ],
+          "delete": []
+        },
+        "dependencies": [
+          "Milestone 2"
+        ],
+        "tests": [
+          "tests/health.route_integration.test.js"
+        ],
+        "rollback": "Revert server/index.js changes"
+      },
+      {
+        "name": "Milestone 4",
+        "description": "Performance safeguards and tests (latency < 50ms, no DB calls)",
+        "files": {
+          "create": [],
+          "modify": [],
+          "delete": []
+        },
+        "dependencies": [
+          "Milestone 3"
+        ],
+        "tests": [
+          "tests/health.latency.test.js",
+          "tests/health.auth.test.js (ensures unauthenticated access)"
+        ],
+        "rollback": "Adjust implementation to meet latency constraint"
+      },
+      {
+        "name": "Milestone 5",
+        "description": "Documentation, cleanup, and handoff",
+        "files": {
+          "create": [],
+          "modify": [
+            "README.md"
+          ],
+          "delete": []
+        },
+        "dependencies": [
+          "Milestone 4"
+        ],
+        "tests": [],
+        "rollback": "Revert README changes"
+      }
+    ],
+    "risks": [
+      "Clock skew affecting timestamp semantics",
+      "Under heavy load, latency could exceed target if logging/allocation becomes expensive",
+      "Environment differences (container vs VM) impacting measured uptime/latency"
+    ],
+    "success_criteria": [
+      "GET /health returns HTTP 200 OK",
+      "Response body includes: status='ok', timestamp (ISO 8601), version='1.0', uptime (positive integer seconds)",
+      "Endpoint is unauthenticated (no auth middleware required)",
+      "Response time under 50ms under expected load",
+      "No database calls are performed during the health check"
+    ],
+    "estimated_time_minutes": 20,
+    "confidence": 0.85
+  },
+  "progress": 0
+}
