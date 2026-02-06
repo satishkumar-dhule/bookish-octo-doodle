@@ -228,7 +228,7 @@ function calculateProgress(state) {
 async function loadStateNode(state) {
   console.log('\n📂 [LOAD_STATE] Loading session state...');
 
-  const sessionId = state.sessionId || `session-${Date.now()}`;
+  const sessionId = state.sessionId;
 
   // Try to resume from checkpoint
   const checkpoint = await loadCheckpoint(sessionId);
@@ -249,7 +249,7 @@ async function loadStateNode(state) {
     sessionId,
     phase: 'initializing',
     timeoutAt: Date.now() + TIMEOUT_MS,
-    progress: 0
+    progress: 5
   };
 }
 
@@ -855,8 +855,19 @@ function routeAfterLoad(state) {
     return 'analyze_idea';
   }
 
-  // Resume from checkpoint
-  return state.phase;
+  // Route based on current phase
+  switch (state.phase) {
+    case 'planning':
+      return 'planning';
+    case 'implementing':
+      return 'parallel_implementation';
+    case 'reviewing':
+      return 'review_code';
+    case 'testing':
+      return 'test';
+    default:
+      return 'analyze_idea';
+  }
 }
 
 function routeAfterAnalysis(state) {
@@ -993,24 +1004,55 @@ async function main() {
     console.log(`⏱️  Timeout: ${TIMEOUT_MS / 60000} minutes`);
     console.log(`🔄 Resume: ${process.env.RESUME === 'true' ? 'Yes' : 'No'}`);
 
-    // Initial state using OpenClaw state management
-    const initialState = {
-      ...createInitialState(),
-      ideaId,
-      ideaContent,
-      sessionId: `session-${Date.now()}`,
-      phase: 'initializing',
-      progress: 0,
-      status: 'pending',
-      errors: [],
-      modifiedFiles: [],
-      conflicts: [],
-      parallelResults: [],
-      reviewIssues: [],
-      milestones: [],
-      retryCount: 0,
-      maxRetries: 3
-    };
+    let sessionId;
+    let initialState;
+
+    if (process.env.RESUME === 'true') {
+      // Try to resume from SESSION_ID env var or current-session.json
+      sessionId = process.env.SESSION_ID;
+      if (!sessionId) {
+        try {
+          const currentSession = JSON.parse(await fs.readFile('state/current-session.json', 'utf-8'));
+          sessionId = currentSession.sessionId;
+          console.log(`   🔄 Resuming session: ${sessionId}`);
+        } catch {
+          throw new Error('No session to resume. Set SESSION_ID or ensure state/current-session.json exists.');
+        }
+      }
+      
+      // Load from checkpoint
+      const checkpoint = await loadCheckpoint(sessionId);
+      if (!checkpoint) {
+        throw new Error(`No checkpoint found for session ${sessionId}`);
+      }
+      
+      initialState = {
+        ...checkpoint,
+        sessionId,
+        retryCount: 0, // Reset retry count on resume
+        timeoutAt: Date.now() + TIMEOUT_MS
+      };
+    } else {
+      // New session
+      sessionId = `session-${Date.now()}`;
+      initialState = {
+        ...createInitialState(),
+        ideaId,
+        ideaContent,
+        sessionId,
+        phase: 'initializing',
+        progress: 0,
+        status: 'pending',
+        errors: [],
+        modifiedFiles: [],
+        conflicts: [],
+        parallelResults: [],
+        reviewIssues: [],
+        milestones: [],
+        retryCount: 0,
+        maxRetries: 3
+      };
+    }
 
     // Run orchestrator using OpenClaw workflow patterns
     const finalState = await runOpenClawOrchestrator(initialState);
