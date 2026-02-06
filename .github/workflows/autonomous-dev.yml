@@ -157,6 +157,10 @@ jobs:
           git add ideas/backlog/
           if ! git diff --staged --quiet; then
             git commit -m "🤖 Auto: Add idea from vibe [skip ci]"
+
+            # Pull latest changes before pushing
+            git pull --rebase origin dev || true
+
             git push origin dev
             echo "✅ Idea committed and pushed"
           else
@@ -211,6 +215,10 @@ jobs:
             fi
 
             git commit -m "🤖 Auto: $MILESTONE [skip ci]"
+
+            # Pull latest changes before pushing
+            git pull --rebase origin dev || true
+
             git push origin dev
             echo "✅ Committed and pushed to dev"
           else
