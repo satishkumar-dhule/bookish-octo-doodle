@@ -83,13 +83,19 @@
     "estimated_time_minutes": 30,
     "confidence": 0.85
   },
-  "currentMilestone": 1,
+  "currentMilestone": 2,
   "totalMilestones": 4,
   "milestones": [
     {
       "name": "Milestone 1",
       "completed_at": "2026-02-06T08:23:49.743Z",
       "commit": "9422f321186bdd416eca58a564ea67f1bd5e9313",
+      "partialSuccess": false
+    },
+    {
+      "name": "Milestone 2",
+      "completed_at": "2026-02-06T08:24:13.504Z",
+      "commit": "7cbe2bff19bc71b48c227ec876621d2305374ddd",
       "partialSuccess": false
     }
   ],
@@ -113,7 +119,8 @@
     }
   },
   "modifiedFiles": [
-    "server/routes/health.js"
+    "server/routes/health.js",
+    "server/index.js"
   ],
   "testResults": null,
   "testPassed": false,
@@ -126,8 +133,24 @@
   "status": "pending",
   "timeoutAt": 1770367653419,
   "resourceUsage": {
-    "memory": 0,
-    "cpu": 0
+    "memory": {
+      "heapUsed": 5,
+      "heapTotal": 5,
+      "external": 2,
+      "rss": 44,
+      "percentage": 90
+    },
+    "cpu": {
+      "user": 73,
+      "system": 20
+    },
+    "disk": {
+      "total": "145G",
+      "used": "54G",
+      "available": "91G",
+      "percentage": 38
+    },
+    "healthy": true
   },
   "degradedMode": false
 }
