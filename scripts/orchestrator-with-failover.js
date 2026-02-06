@@ -598,7 +598,17 @@ async function main() {
 
   try {
     const ideaId = process.env.IDEA_ID || '001-example-feature';
-    const ideaPath = path.join('ideas/backlog', `${ideaId}.md`);
+
+    // Find idea file by ID (it may have a slugified title appended)
+    const backlogDir = 'ideas/backlog';
+    const files = await fs.readdir(backlogDir);
+    const ideaFile = files.find(f => f.startsWith(ideaId) && f.endsWith('.md'));
+
+    if (!ideaFile) {
+      throw new Error(`No idea file found starting with ID: ${ideaId}`);
+    }
+
+    const ideaPath = path.join(backlogDir, ideaFile);
     const ideaContent = await fs.readFile(ideaPath, 'utf-8');
 
     console.log(`📋 Idea: ${ideaId}`);
