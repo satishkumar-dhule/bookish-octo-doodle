@@ -1,0 +1,130 @@
+{
+  "sessionId": "session-1770363682678",
+  "ideaId": "001-example-feature",
+  "ideaContent": "# Add Health Check Endpoint\n\n## Description\nAdd a `/health` endpoint that returns system status\n\n## Context\nFor monitoring and load balancer health checks\n\n## Acceptance Criteria\n- [ ] GET /health endpoint returns 200 OK\n- [ ] Response includes: status, timestamp, version, uptime\n- [ ] Endpoint is unauthenticated\n- [ ] Response time < 50ms\n\n## Technical Notes\n- Return JSON: `{ \"status\": \"ok\", \"timestamp\": \"...\", \"version\": \"1.0\", \"uptime\": 12345 }`\n- Add to main router\n- No database calls (fast response)\n\n## Files Involved\n- `server/routes/health.js` (new)\n- `server/index.js` (update)\n\n## Priority\nMedium\n\n## Complexity\nLow\n",
+  "startedAt": "2026-02-06T07:41:22.678Z",
+  "phase": "planning",
+  "plan": {
+    "milestones": [
+      {
+        "name": "Milestone 1: Scaffolding and Router Wiring",
+        "description": "Create the health route scaffold and wire it into the main router so GET /health is reachable and unauthenticated.",
+        "files": {
+          "create": [
+            "server/routes/health.js"
+          ],
+          "modify": [
+            "server/index.js"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "test/health.scaffold.spec.js"
+        ],
+        "rollback": "Delete server/routes/health.js and revert changes in server/index.js that mount the route."
+      },
+      {
+        "name": "Milestone 2: Implement Health Handler",
+        "description": "Implement the actual /health handler: responds with JSON { status, timestamp, version, uptime } using ISO timestamp, and reads version from package.json with a safe fallback.",
+        "files": {
+          "create": [],
+          "modify": [
+            "server/routes/health.js",
+            "server/index.js"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "test/health.spec.js"
+        ],
+        "rollback": "Revert implementation in server/routes/health.js to scaffold-only logic and revert mounting changes in server/index.js."
+      },
+      {
+        "name": "Milestone 3: Quality, Tests & Documentation",
+        "description": "Add latency checks, CI-friendly tests, and minimal docs. Ensure <50ms response in CI, and document the contract.",
+        "files": {
+          "create": [],
+          "modify": [
+            "test/health.spec.js",
+            "README.md",
+            "docs/api.md"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "test/health.spec.js"
+        ],
+        "rollback": "Remove test files and doc edits if CI fails; revert any latency-check instrumentation added."
+      }
+    ],
+    "risks": [
+      "Version source drift between package.json and runtime code",
+      "Timestamp format/timezone differences across environments",
+      "Potential conflict with existing router paths or authentication middleware",
+      "CI environment variability affecting sub-50ms latency target",
+      "If package.json is not readable in certain deployment scenarios, fallback must be robust"
+    ],
+    "success_criteria": [
+      "GET /health returns HTTP 200",
+      "Response body includes status, timestamp, version, uptime with correct types",
+      "Version is sourced from package.json when available, else defaults to a safe value (e.g., '1.0')",
+      "Timestamp is ISO 8601 string (UTC or standardized) via new Date().toISOString()",
+      "Uptime is a non-negative integer (seconds) from process.uptime()",
+      "No database calls are performed in the health check",
+      "Latency from request receipt to response completion is under 50ms in typical CI environment",
+      "Health endpoint is unauthenticated (no auth middleware required)"
+    ],
+    "estimated_time_minutes": 20,
+    "confidence": 0.85
+  },
+  "planApproved": false,
+  "planConfidence": 0.9,
+  "currentMilestone": 0,
+  "totalMilestones": 3,
+  "milestones": [],
+  "agentOutputs": {
+    "analysis": {
+      "understanding": "Implement a fast /health endpoint in the Node.js ES modules app. It should be unauthenticated, return JSON with status, timestamp, version, and uptime, mounted on the main router, and avoid any database calls. Aim for a response within 50ms and 200 OK.",
+      "complexity": "low",
+      "estimated_milestones": 3,
+      "requires_planning": true,
+      "confidence": 0.9,
+      "risks": [
+        "Version source drift between package.json and runtime code",
+        "Ambiguity in timestamp format or timezone across distributed systems"
+      ],
+      "questions": [
+        "What should be the version source: package.json value or an environment/runtime variable?",
+        "Timestamp format: ISO 8601 string (recommended) or epoch milliseconds? Any specific timezone handling required?"
+      ],
+      "approach": "High-level approach: 1) Create server/routes/health.js with a GET /health handler that returns { status: 'ok', timestamp: '<ISO-8601>', version: '1.0', uptime: <seconds> }. 2) Use process.uptime() for uptime (seconds) and new Date().toISOString() for timestamp. 3) Add a simple mechanism to fetch version (prefer package.json) and fall back to '1.0' if unavailable. 4) Update server/index.js to mount /health on the main router, ensuring it is unauthenticated. 5) Keep the endpoint free of DB calls; consider a tiny timing check to validate sub-50ms latency in typical environment. 6) Add light tests to verify 200 status and presence of required fields; run in CI. 7) Document the endpoint contract and expected response format."
+    }
+  },
+  "parallelResults": [],
+  "modifiedFiles": [],
+  "conflicts": [],
+  "testResults": null,
+  "testPassed": false,
+  "reviewIssues": [],
+  "codeQuality": 0,
+  "errors": [],
+  "retryCount": 0,
+  "maxRetries": 3,
+  "lastError": null,
+  "needsUserInput": false,
+  "userQuestion": "What should be the version source: package.json value or an environment/runtime variable?",
+  "blockingIssue": null,
+  "progress": 0,
+  "status": "pending",
+  "lastCheckpoint": null,
+  "rollbackPoint": null,
+  "executionTime": 0,
+  "timeoutAt": 1770365062679,
+  "resourceUsage": {
+    "memory": 0,
+    "cpu": 0
+  }
+}
