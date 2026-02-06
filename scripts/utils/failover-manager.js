@@ -10,6 +10,8 @@
  */
 
 import { spawn } from 'child_process';
+import { existsSync } from 'fs';
+import path from 'path';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MODEL FAILOVER HIERARCHY
@@ -245,9 +247,20 @@ export class FailoverManager {
       let resolved = false;
 
       // Use 'opencode' command (openclaw is an alias)
+      // Try local OpenCode models first if available
+      let modelArg = model;
+      if (process.env.OPEN_CODE_MODELS_DIR && typeof process.env.OPEN_CODE_MODELS_DIR === 'string') {
+        try {
+          const localCandidate = path.join(process.env.OPEN_CODE_MODELS_DIR, model.replace(/\//g, '_'));
+          if (existsSync(localCandidate)) {
+            modelArg = `local:${localCandidate}`;
+            console.log(`Using local OpenCode model for ${model} -> ${modelArg}`);
+          }
+        } catch (e) { /* ignore */ }
+      }
       const proc = spawn('opencode', [
         'run',
-        '--model', model,
+        '--model', modelArg,
         '--format', 'json',
         prompt
       ], {
