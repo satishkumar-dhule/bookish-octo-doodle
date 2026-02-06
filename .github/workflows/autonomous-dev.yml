@@ -42,7 +42,15 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Cache OpenCode Models\n        uses: actions/cache@v4\n        with:\n          path: ${{ env.OPEN_CODE_MODELS_DIR }}\n          key: opencode-models-${{ runner.os }}-${{ github.sha }}\n          restore-keys: opencode-models-${{ runner.os }}-\n\n      - name: 🗂 Setup OpenCode Models\n        run: bash scripts/setup-opencode-models.sh
+      - name: Cache OpenCode Models
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.OPEN_CODE_MODELS_DIR }}
+          key: opencode-models-${{ runner.os }}-${{ github.sha }}
+          restore-keys: opencode-models-${{ runner.os }}-
+
+      - name: 🗂 Setup OpenCode Models
+        run: bash scripts/setup-opencode-models.sh
         env:
           OPEN_CODE_MODELS_DIR: ${{ env.OPEN_CODE_MODELS_DIR }}
           OPEN_CODE_MODELS_URLS: ${{ env.OPEN_CODE_MODELS_URLS }}
