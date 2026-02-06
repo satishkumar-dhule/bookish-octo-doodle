@@ -221,11 +221,11 @@ jobs:
           if [ -f "state/current-session.json" ]; then
             node -e "
               const s = require('./state/current-session.json');
-              console.log(\`**Idea:** \${s.idea_id || 'N/A'}\`);
+              console.log(\`**Idea:** \${s.ideaId || 'N/A'}\`);
               console.log(\`**Status:** \${s.status || 'unknown'}\`);
               console.log(\`**Progress:** \${s.progress || 0}%\`);
-              console.log(\`**Milestone:** \${s.milestone || 'N/A'}\`);
-              console.log(\`**Next Step:** \${s.next_step || 'TBD'}\`);
+              console.log(\`**Phase:** \${s.phase || 'N/A'}\`);
+              console.log(\`**Milestones:** \${s.currentMilestone || 0}/\${s.totalMilestones || 0}\`);
             " >> $GITHUB_STEP_SUMMARY
           else
             echo "No session state found" >> $GITHUB_STEP_SUMMARY
