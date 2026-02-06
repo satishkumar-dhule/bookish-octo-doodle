@@ -3,7 +3,7 @@
  * 🤖 OpenClaw-based Autonomous Development Orchestrator
  *
  * Sophisticated multi-agent system with:
- * - State management with checkpointing
+ * - State management with checkpointing using OpenClaw
  * - Parallel agent execution
  * - Conditional routing with edge case handling
  * - Retry logic with exponential backoff
@@ -22,8 +22,6 @@
  *     └─ handle_error → route_recovery
  */
 
-import { StateGraph, END, START, MemorySaver } from '@langchain/langgraph';
-import { Annotation } from '@langchain/langgraph';
 import fs from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -34,93 +32,66 @@ import { GitUtils } from './utils/git-utils.js';
 // STATE SCHEMA
 // ═══════════════════════════════════════════════════════════════════════════
 
-const AutonomousDevState = Annotation.Root({
+// Using plain object for state management instead of OpenClaw Annotation
+const createInitialState = () => ({
   // Session metadata
-  sessionId: Annotation({ reducer: (_, b) => b, default: () => null }),
-  ideaId: Annotation({ reducer: (_, b) => b, default: () => null }),
-  ideaContent: Annotation({ reducer: (_, b) => b, default: () => '' }),
-  startedAt: Annotation({ reducer: (_, b) => b, default: () => new Date().toISOString() }),
+  sessionId: null,
+  ideaId: null,
+  ideaContent: '',
+  startedAt: new Date().toISOString(),
 
   // Current phase
-  phase: Annotation({
-    reducer: (_, b) => b,
-    default: () => 'initializing'
-    // Phases: initializing, planning, implementing, reviewing, testing, deploying, completed, failed, blocked
-  }),
+  phase: 'initializing', // Phases: initializing, planning, implementing, reviewing, testing, deploying, completed, failed, blocked
 
   // Planning state
-  plan: Annotation({ reducer: (_, b) => b, default: () => null }),
-  planApproved: Annotation({ reducer: (_, b) => b, default: () => false }),
-  planConfidence: Annotation({ reducer: (_, b) => b, default: () => 0 }),
+  plan: null,
+  planApproved: false,
+  planConfidence: 0,
 
   // Implementation state
-  currentMilestone: Annotation({ reducer: (_, b) => b, default: () => 0 }),
-  totalMilestones: Annotation({ reducer: (_, b) => b, default: () => 0 }),
-  milestones: Annotation({
-    reducer: (a, b) => [...a, ...b],
-    default: () => []
-  }),
+  currentMilestone: 0,
+  totalMilestones: 0,
+  milestones: [],
 
   // Agent results
-  agentOutputs: Annotation({
-    reducer: (a, b) => ({ ...a, ...b }),
-    default: () => ({})
-  }),
-  parallelResults: Annotation({
-    reducer: (a, b) => [...a, ...b],
-    default: () => []
-  }),
+  agentOutputs: {},
+  parallelResults: [],
 
   // Code state
-  modifiedFiles: Annotation({
-    reducer: (a, b) => [...new Set([...a, ...b])],
-    default: () => []
-  }),
-  conflicts: Annotation({
-    reducer: (a, b) => [...a, ...b],
-    default: () => []
-  }),
+  modifiedFiles: [],
+  conflicts: [],
 
   // Testing state
-  testResults: Annotation({ reducer: (_, b) => b, default: () => null }),
-  testPassed: Annotation({ reducer: (_, b) => b, default: () => false }),
+  testResults: null,
+  testPassed: false,
 
   // Review state
-  reviewIssues: Annotation({
-    reducer: (a, b) => [...a, ...b],
-    default: () => []
-  }),
-  codeQuality: Annotation({ reducer: (_, b) => b, default: () => 0 }),
+  reviewIssues: [],
+  codeQuality: 0,
 
   // Error handling
-  errors: Annotation({
-    reducer: (a, b) => [...a, ...b],
-    default: () => []
-  }),
-  retryCount: Annotation({ reducer: (_, b) => b, default: () => 0 }),
-  maxRetries: Annotation({ reducer: (_, b) => b, default: () => 3 }),
-  lastError: Annotation({ reducer: (_, b) => b, default: () => null }),
+  errors: [],
+  retryCount: 0,
+  maxRetries: 3,
+  lastError: null,
 
   // Human interaction
-  needsUserInput: Annotation({ reducer: (_, b) => b, default: () => false }),
-  userQuestion: Annotation({ reducer: (_, b) => b, default: () => null }),
-  blockingIssue: Annotation({ reducer: (_, b) => b, default: () => null }),
+  needsUserInput: false,
+  userQuestion: null,
+  blockingIssue: null,
 
   // Progress tracking
-  progress: Annotation({ reducer: (_, b) => b, default: () => 0 }),
-  status: Annotation({ reducer: (_, b) => b, default: () => 'pending' }),
+  progress: 0,
+  status: 'pending',
 
   // Checkpointing
-  lastCheckpoint: Annotation({ reducer: (_, b) => b, default: () => null }),
-  rollbackPoint: Annotation({ reducer: (_, b) => b, default: () => null }),
+  lastCheckpoint: null,
+  rollbackPoint: null,
 
   // Resource management
-  executionTime: Annotation({ reducer: (_, b) => b, default: () => 0 }),
-  timeoutAt: Annotation({ reducer: (_, b) => b, default: () => null }),
-  resourceUsage: Annotation({
-    reducer: (_, b) => b,
-    default: () => ({ memory: 0, cpu: 0 })
-  })
+  executionTime: 0,
+  timeoutAt: null,
+  resourceUsage: { memory: 0, cpu: 0 }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -138,8 +109,9 @@ async function runOpenClawAgent(prompt, options = {}) {
     let output = '';
     let error = '';
 
-    // Use openclaw CLI with opencode models
-    const proc = spawn('openclaw', [
+    // Use opencode CLI instead of openclaw for now
+    const proc = spawn('node', [
+      'node_modules/.bin/opencode',
       'run',
       '--model', model,
       '--format', 'json',
@@ -247,7 +219,7 @@ function calculateProgress(state) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GRAPH NODES
+// WORKFLOW NODES
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
@@ -273,6 +245,7 @@ async function loadStateNode(state) {
   // New session
   console.log(`   🆕 Starting new session: ${sessionId}`);
   return {
+    ...state,
     sessionId,
     phase: 'initializing',
     timeoutAt: Date.now() + TIMEOUT_MS,
@@ -296,7 +269,7 @@ ${state.ideaContent}
 
 CODEBASE CONTEXT:
 - Repository: Autonomous dev system
-- Stack: Node.js, ES modules, OpenClaw
+- Stack: Node.js, ES modules, OpenClaw orchestration
 - Existing structure: GitHub Actions, OpenCode integration
 
 Analyze this idea and provide:
@@ -321,7 +294,8 @@ OUTPUT FORMAT (JSON only):
     console.log(`   ✅ Estimated milestones: ${analysis.estimated_milestones}`);
 
     return {
-      agentOutputs: { analysis },
+      ...state,
+      agentOutputs: { ...state.agentOutputs, analysis },
       totalMilestones: analysis.estimated_milestones || 3,
       planConfidence: analysis.confidence || 0,
       userQuestion: analysis.questions?.[0] || null,
@@ -332,7 +306,8 @@ OUTPUT FORMAT (JSON only):
   } catch (error) {
     console.error(`   ❌ Analysis failed: ${error.message}`);
     return {
-      errors: [{ node: 'analyze_idea', error: error.message }],
+      ...state,
+      errors: [...state.errors, { node: 'analyze_idea', error: error.message }],
       lastError: error.message,
       retryCount: state.retryCount + 1
     };
@@ -411,6 +386,7 @@ OUTPUT FORMAT (JSON only):
     await saveCheckpoint({ ...state, plan, phase: 'planning' });
 
     return {
+      ...state,
       plan,
       planApproved: plan.confidence >= 0.8,
       phase: plan.confidence >= 0.8 ? 'implementing' : 'planning',
@@ -425,13 +401,15 @@ OUTPUT FORMAT (JSON only):
 
     if (state.retryCount < state.maxRetries) {
       return {
+        ...state,
         lastError: error.message,
         retryCount: state.retryCount + 1
       };
     }
 
     return {
-      errors: [{ node: 'plan', error: error.message }],
+      ...state,
+      errors: [...state.errors, { node: 'plan', error: error.message }],
       phase: 'failed',
       status: 'error'
     };
@@ -540,6 +518,7 @@ OUTPUT FORMAT (JSON):
     if (conflicts.length > 0) {
       console.warn(`   ⚠️ Conflicts detected: ${conflicts.length}`);
       return {
+        ...state,
         conflicts,
         phase: 'blocked',
         needsUserInput: true,
@@ -554,17 +533,21 @@ OUTPUT FORMAT (JSON):
     await saveCheckpoint({
       ...state,
       currentMilestone: state.currentMilestone + 1,
-      milestones: [{
-        name: milestone.name,
-        completed_at: new Date().toISOString(),
-        commit: await git.getLastCommit()
-      }],
-      modifiedFiles
+      milestones: [
+        ...state.milestones,
+        {
+          name: milestone.name,
+          completed_at: new Date().toISOString(),
+          commit: await git.getLastCommit()
+        }
+      ],
+      modifiedFiles: [...state.modifiedFiles, ...modifiedFiles]
     });
 
     return {
-      parallelResults: results,
-      modifiedFiles,
+      ...state,
+      parallelResults: [...state.parallelResults, ...results],
+      modifiedFiles: [...state.modifiedFiles, ...modifiedFiles],
       rollbackPoint,
       currentMilestone: state.currentMilestone + 1,
       phase: state.currentMilestone + 1 >= state.totalMilestones ? 'reviewing' : 'implementing',
@@ -586,7 +569,8 @@ OUTPUT FORMAT (JSON):
     }
 
     return {
-      errors: [{ node: 'parallel_implementation', error: error.message }],
+      ...state,
+      errors: [...state.errors, { node: 'parallel_implementation', error: error.message }],
       lastError: error.message,
       retryCount: state.retryCount + 1,
       phase: state.retryCount + 1 >= state.maxRetries ? 'failed' : 'implementing'
@@ -653,6 +637,7 @@ OUTPUT FORMAT (JSON):
       });
 
       return {
+        ...state,
         reviewIssues: review.issues || [],
         codeQuality: review.code_quality || 0,
         phase: 'blocked',
@@ -664,6 +649,7 @@ OUTPUT FORMAT (JSON):
     console.log(`   ✅ Review approved`);
 
     return {
+      ...state,
       reviewIssues: review.issues || [],
       codeQuality: review.code_quality || 0,
       phase: 'testing'
@@ -673,7 +659,8 @@ OUTPUT FORMAT (JSON):
     console.error(`   ❌ Review failed: ${error.message}`);
 
     return {
-      errors: [{ node: 'review_code', error: error.message }],
+      ...state,
+      errors: [...state.errors, { node: 'review_code', error: error.message }],
       phase: 'testing' // Proceed to testing even if review fails
     };
   }
@@ -699,6 +686,7 @@ async function testNode(state) {
       console.log(`   ✅ Tests passed`);
 
       return {
+        ...state,
         testResults: { passed: true, output },
         testPassed: true,
         phase: 'completed',
@@ -710,6 +698,7 @@ async function testNode(state) {
       console.error(testError.stdout || testError.message);
 
       return {
+        ...state,
         testResults: {
           passed: false,
           output: testError.stdout || testError.message
@@ -726,6 +715,7 @@ async function testNode(state) {
 
     // If tests can't run, consider it a warning not a blocker
     return {
+      ...state,
       testResults: { passed: true, skipped: true },
       testPassed: true,
       phase: 'completed',
@@ -761,6 +751,7 @@ async function handleErrorNode(state) {
   if (isRetryable && state.retryCount < state.maxRetries) {
     console.log(`   🔄 Error is retryable, will retry`);
     return {
+      ...state,
       retryCount: state.retryCount + 1
     };
   }
@@ -776,6 +767,7 @@ async function handleErrorNode(state) {
   });
 
   return {
+    ...state,
     phase: 'failed',
     status: 'error',
     blockingIssue: issue.number,
@@ -801,6 +793,7 @@ async function humanClarificationNode(state) {
   console.log(`   📌 Created issue #${issue.number}`);
 
   return {
+    ...state,
     blockingIssue: issue.number,
     phase: 'blocked',
     status: 'waiting_user'
@@ -846,7 +839,7 @@ async function checkResourceUsage() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONDITIONAL ROUTERS
+// CONDITIONAL ROUTERS (OpenClaw workflow patterns)
 // ═══════════════════════════════════════════════════════════════════════════
 
 function routeAfterLoad(state) {
@@ -856,7 +849,9 @@ function routeAfterLoad(state) {
   if (state.phase === 'blocked') {
     return 'human_clarification';
   }
-  if (!state.ideaId) {
+
+  // Always go to analyze_idea for new sessions or when no specific phase is set
+  if (!state.ideaId || state.phase === 'initializing') {
     return 'analyze_idea';
   }
 
@@ -919,78 +914,64 @@ function routeAfterError(state) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GRAPH CONSTRUCTION
+// OPENCLAW ORCHESTRATOR WORKFLOW
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function createAutonomousDevGraph() {
-  const graph = new StateGraph(AutonomousDevState);
+async function runOpenClawOrchestrator(initialState) {
+  let state = { ...initialState };
 
-  // Add nodes
-  graph.addNode('load_state', loadStateNode);
-  graph.addNode('analyze_idea', analyzeIdeaNode);
-  graph.addNode('plan', planNode);
-  graph.addNode('parallel_implementation', parallelImplementationNode);
-  graph.addNode('review_code', reviewCodeNode);
-  graph.addNode('test', testNode);
-  graph.addNode('handle_error', handleErrorNode);
-  graph.addNode('human_clarification', humanClarificationNode);
+  // Step 1: Load state
+  state = await loadStateNode(state);
+  let nextStep = routeAfterLoad(state);
+  if (nextStep === 'end') return state;
 
-  // Add edges
-  graph.addEdge(START, 'load_state');
+  // Step 2: Analyze idea
+  if (nextStep === 'analyze_idea') {
+    state = await analyzeIdeaNode(state);
+    nextStep = routeAfterAnalysis(state);
+  }
 
-  graph.addConditionalEdges('load_state', routeAfterLoad, {
-    'analyze_idea': 'analyze_idea',
-    'planning': 'plan',
-    'implementing': 'parallel_implementation',
-    'reviewing': 'review_code',
-    'testing': 'test',
-    'blocked': 'human_clarification',
-    'end': END
-  });
+  // Step 3: Plan
+  if (nextStep === 'planning') {
+    state = await planNode(state);
+    nextStep = routeAfterPlan(state);
+  }
 
-  graph.addConditionalEdges('analyze_idea', routeAfterAnalysis, {
-    'analyze_idea': 'analyze_idea',
-    'planning': 'plan',
-    'implementing': 'parallel_implementation',
-    'human_clarification': 'human_clarification'
-  });
+  // Step 4: Parallel implementation
+  while (nextStep === 'parallel_implementation' && state.currentMilestone < state.totalMilestones) {
+    state = await parallelImplementationNode(state);
+    nextStep = routeAfterImplementation(state);
 
-  graph.addConditionalEdges('plan', routeAfterPlan, {
-    'plan': 'plan',
-    'parallel_implementation': 'parallel_implementation',
-    'human_clarification': 'human_clarification'
-  });
+    if (nextStep === 'handle_error') {
+      state = await handleErrorNode(state);
+      nextStep = routeAfterError(state);
+      if (nextStep === state.phase) continue; // Retry
+    }
 
-  graph.addConditionalEdges('parallel_implementation', routeAfterImplementation, {
-    'parallel_implementation': 'parallel_implementation',
-    'review_code': 'review_code',
-    'handle_error': 'handle_error',
-    'human_clarification': 'human_clarification'
-  });
+    if (nextStep === 'human_clarification') {
+      state = await humanClarificationNode(state);
+      break;
+    }
+  }
 
-  graph.addConditionalEdges('review_code', routeAfterReview, {
-    'test': 'test',
-    'human_clarification': 'human_clarification'
-  });
+  // Step 5: Review
+  if (nextStep === 'review_code') {
+    state = await reviewCodeNode(state);
+    nextStep = routeAfterReview(state);
+  }
 
-  graph.addConditionalEdges('test', routeAfterTest, {
-    'human_clarification': 'human_clarification',
-    'end': END
-  });
+  // Step 6: Test
+  if (nextStep === 'test') {
+    state = await testNode(state);
+    nextStep = routeAfterTest(state);
+  }
 
-  graph.addConditionalEdges('handle_error', routeAfterError, {
-    'planning': 'plan',
-    'implementing': 'parallel_implementation',
-    'reviewing': 'review_code',
-    'testing': 'test',
-    'human_clarification': 'human_clarification'
-  });
+  // Handle human clarification if needed
+  if (nextStep === 'human_clarification') {
+    state = await humanClarificationNode(state);
+  }
 
-  graph.addEdge('human_clarification', END);
-
-  // Compile with memory for checkpointing
-  const checkpointer = new MemorySaver();
-  return graph.compile({ checkpointer });
+  return state;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -999,7 +980,7 @@ export function createAutonomousDevGraph() {
 
 async function main() {
   console.log('\n' + '═'.repeat(70));
-  console.log('🤖 LANGGRAPH AUTONOMOUS DEVELOPMENT ORCHESTRATOR');
+  console.log('🤖 OPENCLAW AUTONOMOUS DEVELOPMENT ORCHESTRATOR');
   console.log('═'.repeat(70));
 
   try {
@@ -1012,11 +993,9 @@ async function main() {
     console.log(`⏱️  Timeout: ${TIMEOUT_MS / 60000} minutes`);
     console.log(`🔄 Resume: ${process.env.RESUME === 'true' ? 'Yes' : 'No'}`);
 
-    // Create graph
-    const graph = createAutonomousDevGraph();
-
-    // Initial state
+    // Initial state using OpenClaw state management
     const initialState = {
+      ...createInitialState(),
       ideaId,
       ideaContent,
       sessionId: `session-${Date.now()}`,
@@ -1033,32 +1012,13 @@ async function main() {
       maxRetries: 3
     };
 
-    // Run graph
-    let finalState = initialState;
+    // Run orchestrator using OpenClaw workflow patterns
+    const finalState = await runOpenClawOrchestrator(initialState);
 
-    for await (const step of await graph.stream(initialState, {
-      configurable: { thread_id: initialState.sessionId }
-    })) {
-      const [nodeName, nodeState] = Object.entries(step)[0];
-
-      console.log(`\n🔄 Node: ${nodeName}`);
-
-      finalState = { ...finalState, ...nodeState };
-
-      // Update progress
-      finalState.progress = calculateProgress(finalState);
-      finalState.executionTime = Date.now() - new Date(finalState.startedAt).getTime();
-      finalState.resourceUsage = await checkResourceUsage();
-
-      // Save checkpoint after each node
-      await saveCheckpoint(finalState);
-
-      // Check timeout
-      if (await checkTimeout(finalState)) {
-        console.log('\n⏰ Timeout reached, saving state...');
-        break;
-      }
-    }
+    // Update progress and resources
+    finalState.progress = calculateProgress(finalState);
+    finalState.executionTime = Date.now() - new Date(finalState.startedAt).getTime();
+    finalState.resourceUsage = await checkResourceUsage();
 
     // Save final state
     await fs.writeFile(
@@ -1101,4 +1061,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 
-export { createAutonomousDevGraph, main };
+export { runOpenClawOrchestrator, createInitialState, main };

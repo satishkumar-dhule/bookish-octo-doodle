@@ -4,9 +4,8 @@
   "description": "AI-powered autonomous development system with GitHub Actions and OpenCode CLI",
   "type": "module",
   "scripts": {
-    "start": "node scripts/orchestrator-with-failover.js",
+    "start": "node scripts/orchestrator-langgraph.js",
     "start:simple": "node scripts/orchestrator.js",
-    "start:langgraph": "node scripts/orchestrator-langgraph.js",
     "bootstrap": "node scripts/bootstrap.js",
     "idea": "node scripts/create-idea.js",
     "idea:interactive": "node scripts/create-idea.js --interactive",
@@ -27,8 +26,6 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@langchain/core": "^0.3.30",
-    "@langchain/langgraph": "^0.2.29"
-  },
-  "devDependencies": {}
+    "opencode-ai": "^1.1.53"
+  }
 }

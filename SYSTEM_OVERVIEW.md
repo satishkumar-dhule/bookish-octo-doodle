@@ -26,7 +26,7 @@ autonomous-dev-proposal/
 │   ├── SUMMARY.md                       # Complete summary
 │   └── SYSTEM_OVERVIEW.md               # This file
 │
-├── 🔷 LangGraph Orchestrator (900+ lines)
+├── 🔷 OpenClaw Orchestrator (900+ lines)
 │   └── scripts/
 │       ├── orchestrator-langgraph.js    # Main state graph
 │       └── orchestrator.js              # Simple version (backup)
@@ -76,7 +76,7 @@ autonomous-dev-proposal/
 │  │  1. Checkout repo                                         │  │
 │  │  2. Setup Node.js + Install OpenCode CLI                 │  │
 │  │  3. Resume check (load checkpoint if exists)             │  │
-│  │  4. Run LangGraph Orchestrator ──────────────────────┐   │  │
+│  │ 4. Run OpenClaw Orchestrator ──────────────────────┐   │  │
 │  │  5. Commit progress to dev branch                    │   │  │
 │  │  6. Update GitHub Issues                             │   │  │
 │  │  7. Generate summary                                 │   │  │
@@ -266,7 +266,7 @@ If error occurs:
 
 ## 🎯 Key Features
 
-### ✅ **LangGraph Architecture**
+### ✅ **OpenClaw Architecture**
 - State graphs with conditional routing
 - Automatic checkpointing
 - Built-in retry logic
@@ -316,14 +316,14 @@ If error occurs:
 
 ## 🔮 Comparison Matrix
 
-| Feature | Manual Dev | Simple Bot | **LangGraph System** |
+| Feature | Manual Dev | Simple Bot | **OpenClaw System** |
 |---------|-----------|------------|---------------------|
 | **Planning** | Developer | Basic | ✅ AI-powered with confidence |
 | **Implementation** | Developer | Sequential | ✅ 3x parallel agents |
 | **Code Review** | Peer review | None | ✅ AI reviewer |
 | **Testing** | Developer | Basic | ✅ Auto-run with retry |
 | **Error Handling** | Manual fix | Fail fast | ✅ 10 recovery strategies |
-| **State Management** | None | Basic | ✅ LangGraph checkpointing |
+| **State Management** | None | Basic | ✅ OpenClaw checkpointing |
 | **Resume Capability** | N/A | Limited | ✅ Thread-based resume |
 | **Conflict Resolution** | Manual | Fail | ✅ Auto-detect + escalate |
 | **Resource Monitoring** | None | None | ✅ Memory/CPU/disk tracking |
@@ -348,7 +348,7 @@ Free models + free GitHub Actions = unlimited usage.
 3 agents working simultaneously, not sequential.
 
 ### 4. **State Machine Architecture**
-LangGraph provides formal state management, not ad-hoc logic.
+OpenClaw provides formal state management, not ad-hoc logic.
 
 ### 5. **Automatic Recovery**
 75% of failures auto-recover without human intervention.
@@ -372,7 +372,7 @@ Add new nodes, agents, or recovery strategies easily.
 
 ## 🎓 Technical Highlights
 
-### LangGraph State Management
+### OpenClaw State Management
 ```javascript
 const AutonomousDevState = Annotation.Root({
   // 30+ state fields with reducers

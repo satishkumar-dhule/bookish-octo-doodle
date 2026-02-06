@@ -191,7 +191,7 @@ npm install
 
 This installs:
 - `@langchain/langgraph` - State orchestration
-- `@langchain/core` - LangGraph core
+- `@langchain/core` - OpenClaw core
 
 ## Step 4: Create Your First Idea (30 seconds)
 

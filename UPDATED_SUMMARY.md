@@ -39,7 +39,7 @@ openclaw --version
 │  ┌────────────────────────────────────────────────┐ │
 │  │ 1. Install OpenClaw CLI                        │ │
 │  │ 2. Load checkpoint (if resuming)               │ │
-│  │ 3. Run LangGraph Orchestrator ────────────┐    │ │
+│  │ 3. Run OpenClaw Orchestrator ────────────┐    │ │
 │  │ 4. Commit to dev branch                   │    │ │
 │  │ 5. Update GitHub Issues                   │    │ │
 │  └────────────────────────────────────────────────┘ │
@@ -47,7 +47,7 @@ openclaw --version
                        │
                        ▼
 ┌─────────────────────────────────────────────────────┐
-│          LangGraph Orchestrator                     │
+│          OpenClaw Orchestrator                     │
 │  ┌────────────────────────────────────────┐        │
 │  │ State Graph (8 nodes, 7 routers)       │        │
 │  │ - Load State                            │        │
@@ -231,7 +231,7 @@ npm install
 | OpenClaw CLI | Free |
 | OpenCode Models | Free (generous limits) |
 | GitHub Actions | Free (2000 min/month) |
-| LangGraph | Free (open source) |
+| OpenClaw | Free (open source) |
 | **Total** | **$0/month** |
 
 ### Usage Estimate
@@ -348,7 +348,7 @@ You now have:
 ✅ **Standalone system** (not tied to any existing project)
 ✅ **OpenClaw CLI** for agent execution
 ✅ **OpenCode models** for free, quality AI
-✅ **LangGraph orchestration** for reliability
+✅ **OpenClaw orchestration** for reliability
 ✅ **24+ edge cases** handled
 ✅ **$0 cost** forever
 ✅ **5-minute setup** ready to go
@@ -370,4 +370,4 @@ You now have:
 
 ---
 
-**Built with OpenClaw + OpenCode + LangGraph** 🚀
+**Built with OpenClaw + OpenCode + OpenClaw** 🚀

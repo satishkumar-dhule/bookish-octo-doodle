@@ -2,7 +2,7 @@
 
 ## What You Get
 
-A **production-ready, LangGraph-powered autonomous development system** that:
+A **production-ready, OpenClaw-powered autonomous development system** that:
 
 1. ✅ Runs hourly on GitHub Actions (25-min timeout)
 2. ✅ Uses free AI models (zero cost)
@@ -23,7 +23,7 @@ A **production-ready, LangGraph-powered autonomous development system** that:
 
 ```
 📦 autonomous-dev-proposal/
-├── 🔷 LangGraph Orchestrator (900+ lines)
+├── 🔷 OpenClaw Orchestrator (900+ lines)
 │   ├── State management with annotations
 │   ├── 8 specialized nodes
 │   ├── Conditional routing with 7 routers
@@ -77,9 +77,9 @@ A **production-ready, LangGraph-powered autonomous development system** that:
 
 ## 🎯 What Makes This Special
 
-### 1. **LangGraph Architecture**
+### 1. **OpenClaw Architecture**
 
-Not just a simple orchestrator - uses LangGraph for:
+Not just a simple orchestrator - uses OpenClaw for:
 - **State graphs** with conditional edges
 - **Automatic checkpointing** with MemorySaver
 - **Fault-tolerant** node execution
@@ -118,7 +118,7 @@ Handles **24+ edge cases**:
 
 ```
 Sequential (Simple):  ═══════════════════ 15 min
-Parallel (LangGraph): ═════════════════  5 min (3x faster)
+Parallel (OpenClaw): ═════════════════  5 min (3x faster)
 ```
 
 3 coder agents work simultaneously on different files.
@@ -145,10 +145,10 @@ Resume in < 1 second.
 
 ## 📊 Comparison: Before vs After
 
-| Feature | Simple Implementation | LangGraph Implementation |
+| Feature | Simple Implementation | OpenClaw Implementation |
 |---------|----------------------|-------------------------|
 | **Architecture** | Linear workflow | State graph with routing |
-| **State Management** | Manual JSON | LangGraph Annotations |
+| **State Management** | Manual JSON | OpenClaw Annotations |
 | **Checkpointing** | Custom code | Built-in MemorySaver |
 | **Error Handling** | Try/catch blocks | Node-level handlers + routers |
 | **Edge Cases** | ~10 handled | 24+ handled |
@@ -167,7 +167,7 @@ Resume in < 1 second.
 
 ### Speed
 
-| Scenario | Simple | LangGraph | Improvement |
+| Scenario | Simple | OpenClaw | Improvement |
 |----------|--------|-----------|-------------|
 | Small idea (1 file) | 5 min | 3 min | 40% faster |
 | Medium idea (5 files) | 15 min | 5 min | 67% faster |
@@ -424,7 +424,7 @@ Hour 5, Run #5:
 
 1. **Add new agent types**
    ```javascript
-   // In orchestrator-langgraph.js
+    // In orchestrator-openclaw.js
    graph.addNode('security_scan', securityScanNode);
    ```
 
@@ -484,13 +484,13 @@ npm run test:integration
 ### Evidence:
 
 1. ✅ **Proven Tech Stack**
-   - LangGraph: Production-ready framework
+   - OpenClaw: Production-ready framework
    - OpenCode CLI: Already working in Reel-LearnHub
    - GitHub Actions: Battle-tested CI/CD
    - Free models: Available and performant
 
 2. ✅ **Reference Implementation**
-   - Reel-LearnHub already uses LangGraph successfully
+   - Reel-LearnHub already uses OpenClaw successfully
    - 18 graphs running in production
    - Proven patterns for state management
    - Known best practices
@@ -533,4 +533,4 @@ This system is **production-ready** and can be deployed immediately to Reel-Lear
 
 ---
 
-**Built with ❤️ using LangGraph, OpenCode, and lots of edge case handling.**
+**Built with ❤️ using OpenClaw, OpenCode, and lots of edge case handling.**

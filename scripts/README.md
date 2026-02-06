@@ -89,7 +89,7 @@ node scripts/orchestrator-with-failover.js
 - `GITHUB_TOKEN` - For GitHub API access
 
 **Features:**
-- LangGraph state machine
+- OpenClaw state machine
 - Multi-model failover (3 tiers)
 - Circuit breaker pattern
 - Graceful degradation
@@ -105,7 +105,7 @@ node scripts/orchestrator-with-failover.js
 
 ### `orchestrator-langgraph.js`
 
-**LangGraph orchestrator without failover**
+**OpenClaw orchestrator without failover**
 
 ```bash
 node scripts/orchestrator-langgraph.js
@@ -117,7 +117,7 @@ node scripts/orchestrator-langgraph.js
 - Graceful degradation
 
 **Use when:**
-- Testing LangGraph logic
+- Testing OpenClaw logic
 - Debugging state flow
 - Learning the architecture
 
@@ -132,7 +132,7 @@ node scripts/orchestrator.js
 ```
 
 **Basic sequential orchestrator:**
-- No LangGraph
+- No OpenClaw
 - Simple state machine
 - Basic error handling
 
@@ -249,7 +249,7 @@ const result = await failover.executeWithFailover('coder', prompt);
 | `bootstrap.js` | Low | Setup automation | First-time setup |
 | `create-idea.js` | Low | AI idea expansion | Adding ideas |
 | `orchestrator.js` | Low | Basic flow | Learning/reference |
-| `orchestrator-langgraph.js` | Medium | LangGraph + edge cases | Testing LangGraph |
+| `orchestrator-openclaw.js` | Medium | OpenClaw + edge cases | Testing OpenClaw |
 | `orchestrator-with-failover.js` | High | Full production features | Production use |
 
 ---

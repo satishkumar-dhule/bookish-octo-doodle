@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 🤖 LangGraph Orchestrator with Failover & Graceful Error Handling
+ * 🤖 OpenClaw Orchestrator with Failover & Graceful Error Handling
  *
  * Enhanced with:
  * - Multi-model failover

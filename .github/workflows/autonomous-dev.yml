@@ -42,20 +42,19 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
-      - name: 🤖 Install OpenCode AI CLI
+      - name: 🤖 Install OpenClaw CLI
         run: |
-          # Install the real opencode-ai package
-          npm install -g opencode-ai
+          npm install -g openclaw
 
           # Verify installation
-          opencode --version
+          openclaw --version
 
           # Create openclaw alias pointing to opencode for backward compatibility
           echo '#!/bin/bash' | sudo tee /usr/local/bin/openclaw > /dev/null
           echo 'exec opencode "$@"' | sudo tee -a /usr/local/bin/openclaw > /dev/null
           sudo chmod +x /usr/local/bin/openclaw
 
-          echo "✅ OpenCode AI installed successfully"
+          echo "✅ OpenClaw installed successfully"
 
       - name: 🌐 Install Cloudflared
         run: |
@@ -133,7 +132,7 @@ jobs:
             echo "resume=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 🎯 Run Autonomous Orchestrator (LangGraph + Failover)
+      - name: 🎯 Run Autonomous Orchestrator (OpenClaw + Failover)
         env:
           GITHUB_TOKEN: ${{ secrets.GHTOKEN}}
           MODEL: ${{ vars.MODEL || 'opencode/gpt-5-nano' }}  # OpenCode models via OpenClaw

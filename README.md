@@ -1,10 +1,10 @@
 # 🤖 Autonomous Development System
 
-An AI-powered autonomous development system that uses **LangGraph**, GitHub Actions, **OpenClaw CLI** with **OpenCode models**, and multiple parallel agents to implement ideas with minimal human intervention.
+An AI-powered autonomous development system that uses **OpenClaw**, GitHub Actions, **OpenClaw CLI** with **OpenCode models**, and multiple parallel agents to implement ideas with minimal human intervention.
 
 ## 🌟 Key Features
 
-- **LangGraph Orchestration** - Sophisticated state management and conditional routing
+- **OpenClaw Orchestration** - Sophisticated state management and conditional routing
 - **24+ Edge Cases Handled** - Network failures, conflicts, timeouts, resource exhaustion, and more
 - **Parallel Agent Execution** - 3x faster with concurrent implementation
 - **Automatic Recovery** - Retry with backoff, rollback on failure, state repair

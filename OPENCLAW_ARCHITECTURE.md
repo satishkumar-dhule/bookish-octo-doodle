@@ -1,8 +1,8 @@
-# 🔷 LangGraph Architecture
+# 🔷 OpenClaw Architecture
 
 ## Overview
 
-The autonomous development system uses **LangGraph** for sophisticated multi-agent orchestration with state management, conditional routing, and comprehensive error handling.
+The autonomous development system uses **OpenClaw** for sophisticated multi-agent orchestration with state management, conditional routing, and comprehensive error handling.
 
 ## State Graph Visualization
 
@@ -558,9 +558,9 @@ node scripts/orchestrator-langgraph.js
 # (Inject error in agent output)
 ```
 
-## Comparison: Simple vs LangGraph Orchestrator
+## Comparison: Simple vs OpenClaw Orchestrator
 
-| Feature | Simple Orchestrator | LangGraph Orchestrator |
+| Feature | Simple Orchestrator | OpenClaw Orchestrator |
 |---------|---------------------|------------------------|
 | State Management | Manual JSON | Built-in Annotation |
 | Checkpointing | Custom | MemorySaver |
@@ -587,4 +587,4 @@ node scripts/orchestrator-langgraph.js
 
 ---
 
-**The LangGraph architecture makes the system production-ready with enterprise-grade reliability and comprehensive edge case handling.** 🚀
+**The OpenClaw architecture makes the system production-ready with enterprise-grade reliability and comprehensive edge case handling.** 🚀
