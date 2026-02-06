@@ -588,11 +588,27 @@ export function createAutonomousDevGraph() {
   graph.addNode('review_code', reviewCodeNode);
   graph.addNode('test', testNode);
 
-  // Add edges (same as before)
+  // Add edges
   graph.addEdge(START, 'analyze_idea');
   graph.addEdge('analyze_idea', 'create_plan');
   graph.addEdge('create_plan', 'parallel_implementation');
-  graph.addEdge('parallel_implementation', 'review_code');
+
+  // Conditional edge: loop back to implementation if more milestones remain
+  graph.addConditionalEdges(
+    'parallel_implementation',
+    (state) => {
+      // Check if there are more milestones to process
+      if (state.currentMilestone < state.totalMilestones) {
+        return 'continue_implementation';
+      }
+      return 'all_milestones_done';
+    },
+    {
+      continue_implementation: 'parallel_implementation',
+      all_milestones_done: 'review_code'
+    }
+  );
+
   graph.addEdge('review_code', 'test');
   graph.addEdge('test', END);
 
