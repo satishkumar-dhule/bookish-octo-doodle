@@ -1,110 +1,165 @@
 {
-  "ideaId": "001-example-feature",
-  "ideaContent": "# Add Health Check Endpoint\n\n## Description\nAdd a `/health` endpoint that returns system status\n\n## Context\nFor monitoring and load balancer health checks\n\n## Acceptance Criteria\n- [ ] GET /health endpoint returns 200 OK\n- [ ] Response includes: status, timestamp, version, uptime\n- [ ] Endpoint is unauthenticated\n- [ ] Response time < 50ms\n\n## Technical Notes\n- Return JSON: `{ \"status\": \"ok\", \"timestamp\": \"...\", \"version\": \"1.0\", \"uptime\": 12345 }`\n- Add to main router\n- No database calls (fast response)\n\n## Files Involved\n- `server/routes/health.js` (new)\n- `server/index.js` (update)\n\n## Priority\nMedium\n\n## Complexity\nLow\n",
-  "sessionId": "session-1770344611472",
+  "ideaId": "006",
+  "ideaContent": "# Add Request Validation Middleware\n\n## Description\nImplement a reusable validation middleware that enforces request payload shapes across API endpoints by validating req.body, req.query, and req.params against predefined schemas before reaching business logic.\n\n## Context\nWithout consistent validation, APIs become error-prone, security risk, and hard to maintain. Centralized validation reduces runtime errors, improves security by rejecting unexpected data early, and provides uniform error messaging.\n\n## Acceptance Criteria\n- [ ] All API routes pass through a single, reusable validation middleware.\n- [ ] Schemas are defined centrally and per-route, validating body, query, and path parameters where applicable.\n- [ ] On validation failure, the API returns a 400 response with a structured error payload detailing invalid fields.\n- [ ] There are unit tests and integration tests covering valid and invalid inputs (missing fields, wrong types, nested shapes).\n- [ ] Sensitive data is not logged; error messages are sanitized and consistent across endpoints.\n\n## Technical Notes\nRecommended stack: Node.js with Express and TypeScript. Use a schema library (e.g., Zod) to define per-route schemas. Implement a generic middleware that reads a route's attached schema metadata (e.g., via route configuration) and validates req.body/req.query/req.params accordingly. Provide clear error formatting (field, message, value). Wire up in app.use for global endpoints or per-router basis. Add tests for valid payloads, invalid payloads, and edge cases (optional fields, defaults). Consider performance: compile schemas once; avoid runtime reflection in hot paths.\n\n## Priority\nMedium\n\n## Estimated Complexity\nMedium\n\n## Labels\nfeature\n\n---\n\n**Created:** 2026-02-06\n**ID:** 006\n",
+  "sessionId": "session-1770345104844",
   "phase": "completed",
-  "timeoutAt": 1770345991472,
+  "timeoutAt": 1770346484844,
   "agentOutputs": {
     "analysis": {
-      "understanding": "You're adding a /health endpoint for liveness checks. It should be unauthenticated, return status, timestamp, version, and uptime, and respond within 50ms to assist monitoring and load balancer health checks.",
-      "complexity": "low",
+      "understanding": "Implement a reusable Express validation middleware (using TypeScript) that enforces request payload shapes across API endpoints by validating req.body, req.query, and req.params against predefined schemas before business logic runs. Schemas are defined centrally, per-route, and attached to routes. On failure, return 400 with a structured error payload. Include unit/integration tests and ensure sensitive data is not logged and error messages are sanitized and consistent.",
+      "complexity": "medium",
       "estimated_milestones": 3,
       "requires_planning": true,
-      "confidence": 0.9,
+      "confidence": 0.85,
       "risks": [
-        "Uptime is per-process in a multi-worker setup; if you run multiple instances, each reports its own uptime.",
-        "Version source may drift with CI/CD; ensure the deployed version matches the reported version (e.g., from package.json or an env var).",
-        "Timestamp and uptime semantics may differ across environments (containerized, serverless); ensure consistency across deployments."
+        "Schema-definition coupling: risk of tight coupling between route definitions and validation schemas; mitigate with a clean registry and a wrapper that injects schemas.",
+        "Performance: runtime schema validation can add overhead; mitigate by compiling/caching schemas once and avoiding reflection in hot paths.",
+        "Optional/default handling: ensuring optional fields, default values, and nested shapes map correctly without breaking existing logic.",
+        "Logging exposure: risk of logging sensitive fields from req.body; ensure sanitization and configurable redaction.",
+        "Error payload consistency: ensure a uniform error shape across endpoints and across nested validation errors."
       ],
       "questions": [
-        "Should uptime be reported in seconds or milliseconds?",
-        "Timestamp format: ISO 8601 string or epoch milliseconds?",
-        "What is the preferred source for versioning: package.json, a VERSION environment variable, or CI/CD injected value?"
+        "Do you want Zod as the default schema library with a pluggable option for other validators in the future?",
+        "Should validation be global via app.use with a central registry, or per-route via a small wrapper (validatedRoute) that chains a single reusable validator with the actual handler?",
+        "Are there any fields or endpoints with known sensitive data that must always be redacted in logs and error payloads (e.g., passwords, tokens, SSNs)?"
       ],
-      "approach": "High-level plan: 1) Create server/routes/health.js with a GET /health handler that returns { status: 'ok', timestamp, version, uptime } and no DB calls. 2) Update server/index.js to mount the health route on the main router, ensuring no authentication middleware wraps this path. 3) Validate locally: GET /health returns 200 with the required fields and sub-50ms response time; consider adding a minimal integration test if present."
+      "approach": "High-level plan: 1) Establish a central schema registry keyed by route (method + path or route id) that stores optional body, query, and params schemas (Zod schemas). 2) Implement a single reusable validation middleware (factory) that, given a route's schemas, validates req.body, req.query, and req.params using safeParse, collecting field-level errors. 3) On validation failure, respond with 400 and a structured error payload: { errors: [ { field: 'body.name', message: 'Required', value: <sanitized> }, ... ] }. 4) Attach per-route schemas via a small helper wrapper (validatedRoute) or through a per-router local registry, ensuring all routes funnel through the same validation logic. 5) Compile/cache schemas to avoid per-request recompilation and minimize reflection in hot paths. 6) Add unit tests for valid/invalid inputs (missing fields, wrong types, nested shapes) and integration tests for end-to-end validation across endpoints. 7) Enforce sanitized error messages and ensure sensitive data is not logged; align with existing logging/monitoring standards. 8) Document the schema conventions and provide a short migration path for existing endpoints to adopt the new validation flow."
     }
   },
-  "totalMilestones": 2,
+  "totalMilestones": 5,
   "userQuestion": null,
   "needsUserInput": false,
   "degradedMode": false,
   "resourceUsage": {
     "memory": {
-      "heapUsed": 13,
+      "heapUsed": 12,
       "heapTotal": 14,
       "external": 2,
-      "rss": 66,
-      "percentage": 91
+      "rss": 64,
+      "percentage": 88
     },
     "cpu": {
-      "user": 388,
-      "system": 58
+      "user": 448,
+      "system": 83
     },
     "disk": {
-      "total": "72G",
-      "used": "51G",
-      "available": "22G",
-      "percentage": 71
+      "total": "145G",
+      "used": "54G",
+      "available": "91G",
+      "percentage": 38
     },
-    "healthy": false
+    "healthy": true
   },
   "plan": {
     "milestones": [
       {
-        "name": "Milestone 1: Scaffold Health Route",
-        "description": "Create health route file and wire into main router; ensure unauthenticated access and no DB calls.",
+        "name": "Milestone 1",
+        "description": "Establish core validation middleware and schema core using Zod; scaffold project structure and route wiring concepts.",
         "files": {
           "create": [
-            "server/routes/health.js"
+            "src/middleware/validation.ts",
+            "src/schemas/validation/index.ts",
+            "src/schemas/validation/types.ts"
           ],
-          "modify": [
-            "server/index.js"
-          ],
+          "modify": [],
           "delete": []
         },
         "dependencies": [],
         "tests": [
-          "Test plan: GET /health returns 200 and is unauthenticated",
-          "Add basic integration test scaffold at tests/health.integration.test.js"
+          "tests/validation/middleware.unit.ts"
         ],
-        "rollback": "Remove server/routes/health.js and revert wiring changes in server/index.js; delete test scaffold"
+        "rollback": "Delete the newly added middleware and schema scaffolding files; revert any interface/type changes introduced for wiring."
       },
       {
-        "name": "Milestone 2: Implement Health Logic",
-        "description": "Implement endpoint response content: status, timestamp, version, uptime; ensure response time < 50ms; ensure JSON shape matches spec.",
+        "name": "Milestone 2",
+        "description": "Define per-route schemas and a route registration helper to attach schemas to routes; wire middleware into routes.",
         "files": {
-          "create": [],
+          "create": [
+            "src/schemas/routeSchemas.ts",
+            "src/middleware/validationLoader.ts"
+          ],
           "modify": [
-            "server/routes/health.js",
-            "server/index.js"
+            "src/app.ts"
           ],
           "delete": []
         },
         "dependencies": [],
         "tests": [
-          "GET /health returns 200 with JSON body",
-          "Response includes fields: status, timestamp, version, uptime",
-          "Response is unauthenticated",
-          "Measure response time avg < 50ms under baseline conditions",
-          "No database or external calls are performed in the health check"
+          "tests/integration/middleware_attachment.test.ts"
         ],
-        "rollback": "If performance regressions occur, revert health endpoint logic to a minimal static response or disable the route; revert any instrumentation"
+        "rollback": "Revert route wiring changes and remove per-route schema scaffolding; ensure routes compile without middleware if rolled back."
+      },
+      {
+        "name": "Milestone 3",
+        "description": "Implement error formatting, sanitization, and logging controls; ensure 400 responses have structured payload.",
+        "files": {
+          "create": [
+            "src/middleware/errorFormatter.ts"
+          ],
+          "modify": [
+            "src/middleware/validation.ts"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "tests/validation/errorFormat.test.ts",
+          "tests/integration/validationResponse.test.ts"
+        ],
+        "rollback": "Revert changes to error handling and remove errorFormatter usage; ensure no residual sanitization logic remains."
+      },
+      {
+        "name": "Milestone 4",
+        "description": "End-to-end tests for valid and invalid inputs; cover body, query, and params; ensure performance notes.",
+        "files": {
+          "create": [
+            "tests/integration/validation.endtoend.test.ts"
+          ],
+          "modify": [],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "tests/integration/validation.endtoend.test.ts"
+        ],
+        "rollback": "Disable or revert integration tests and any mocks affecting endpoint validation flow."
+      },
+      {
+        "name": "Milestone 5",
+        "description": "Documentation, best practices, and cleanup; add example schemas and usage docs; review logging.",
+        "files": {
+          "create": [
+            "docs/validation.md"
+          ],
+          "modify": [
+            "README.md"
+          ],
+          "delete": []
+        },
+        "dependencies": [
+          "Milestone 1",
+          "Milestone 2",
+          "Milestone 3",
+          "Milestone 4"
+        ],
+        "tests": [],
+        "rollback": "Revert documentation changes if not desired; revert README edits."
       }
     ],
     "risks": [
-      "Potential latency from extra route processing; keep logic minimal",
-      "Clock drift or monotonicity concerns for uptime; rely on process.uptime() which is sufficient for health checks",
-      "Container/PM2/clustered environments may have multiple workers; ensure health check is stateless and fast per request"
+      "Performance overhead from runtime validation on high-traffic endpoints.",
+      "Complexity in attaching per-route schemas to routes with dynamic paths.",
+      "Potential refactors required in existing routes to adopt the new middleware pattern."
     ],
     "success_criteria": [
-      "GET /health returns 200 OK",
-      "Response JSON includes: status, timestamp, version, uptime",
-      "Endpoint is unauthenticated",
-      "Average response time < 50ms",
-      "No database or external service calls are made during the health check"
+      "All API routes pass through a single reusable validation middleware.",
+      "Schemas are centrally defined and per-route; body, query, and params are validated when present.",
+      "Invalid inputs yield a 400 with structured error payload detailing invalid fields.",
+      "Unit and integration tests cover valid inputs, invalid inputs (missing fields, wrong types, nested shapes), and edge cases (optional fields, defaults).",
+      "Sensitive data is sanitized in error payloads and not logged."
     ],
-    "estimated_time_minutes": 20,
-    "confidence": 0.85
+    "estimated_time_minutes": 1320,
+    "confidence": 0.78
   },
   "parallelResults": [
     {
@@ -112,14 +167,25 @@
       "result": {
         "files": [
           {
-            "path": "server/routes/health.js",
-            "content": "// Health check endpoint for scaffolding milestone\nexport const healthHandler = (req, res) => {\n  const uptime = Math.floor(process.uptime())\n  const payload = {\n    status: 'ok',\n    timestamp: new Date().toISOString(),\n    uptime\n  }\n  res.writeHead(200, { 'Content-Type': 'application/json' })\n  res.end(JSON.stringify(payload))\n}\n",
-            "explanation": "Adds a health-check handler that returns a simple JSON payload with status, timestamp, and uptime."
+            "path": "src/middleware/validation.ts",
+            "content": "import { Request, Response, NextFunction } from \\\"express\\\";\\n\\n// Simple runtime schema type: boolean flags indicate required primitive fields;\\n// nested objects are supported via nested ValidationSchema objects.\\nexport type ValidationSchema = {\\n  [key: string]: boolean | ValidationSchema;\\n};\\n\\n/**\\n * Creates an Express middleware that validates req.body against a simple runtime schema.\\n * - Primitives marked as true are required.\\n * - Nested objects are validated recursively.\\n */\\nexport const buildValidationMiddleware = (schema: ValidationSchema) => {\\n  return (req: Request, res: Response, next: NextFunction) => {\\n    const errors: string[] = [];\\n\\n    const walk = (obj: any, sch: ValidationSchema, path: string) => {\\n      for (const key of Object.keys(sch)) {\\n        const rule = (sch as any)[key];\\n        const exists = obj != null && Object.prototype.hasOwnProperty.call(obj, key);\\n        const currentPath = path ? `${path}.${key}` : key;\\n\\n        if (rule === true) {\\n          if (!exists) {\\n            errors.push(`Missing required field: ${currentPath}`);\\n          }\\n        } else if (rule && typeof rule === \\\"object\\\") {\\n          if (!exists) {\\n            errors.push(`Missing required object: ${currentPath}`);\\n          } else {\\n            walk(obj[key], rule as ValidationSchema, currentPath);\\n          }\\n        }\\n      }\\n    };\\n\\n    walk(req.body, schema, \\\"\\\");\\n\\n    if (errors.length > 0) {\\n      res.status(400).json({ errors });\\n      return;\\n    }\\n    next();\\n  };\\n};\\n\\nexport const validateBody = buildValidationMiddleware;\\n\\nexport default buildValidationMiddleware;\\n"
           },
           {
-            "path": "server/index.js",
-            "content": "import http from 'http'\nimport { healthHandler } from './routes/health.js'\n\nconst PORT = process.env.PORT ? Number(process.env.PORT) : 3000\nconst HOST = process.env.HOST || '0.0.0.0'\n\nconst requestListener = (req, res) => {\n  // Simple health endpoint\n  if (req.url === '/health' && (req.method === 'GET' || req.method === 'HEAD')) {\n    return healthHandler(req, res)\n  }\n\n  // Fallback for unknown routes\n  res.writeHead(404, { 'Content-Type': 'application/json' })\n  res.end(JSON.stringify({ status: 'not_found', path: req.url }))\n}\n\nconst server = http.createServer(requestListener)\n\nserver.listen(PORT, HOST, () => {\n  console.log(`Server listening on ${HOST}:${PORT}`)\n})\n\nexport default server\n",
-            "explanation": "Scaffolds a minimal HTTP server that exposes the /health route and returns 404 for unknown paths."
+            "path": "src/schemas/validation/index.ts",
+            "content": "export type ValidationSchema = {\\n  [key: string]: boolean | ValidationSchema;\\n};\\n\\n// Example user schema: all fields are required (primitive values)\\nexport const userValidationSchema: ValidationSchema = {\\n  username: true,\\n  password: true,\\n  email: true,\\n};\\n\\n// Example post/article schema with a nested author object\\nexport const postValidationSchema: ValidationSchema = {\\n  title: true,\\n  content: true,\\n  author: {\\n    username: true,\\n  },\\n};\\n\\n// Aggregate schemas for easy imports\\nexport const schemas = {\\n  userValidationSchema,\\n  postValidationSchema,\\n};\\n\\nexport default schemas;\\n"
+          }
+        ]
+      },
+      "model": "opencode/gpt-5-nano",
+      "fallback": false
+    },
+    {
+      "success": true,
+      "result": {
+        "files": [
+          {
+            "path": "src/schemas/validation/types.ts",
+            "content": "export type ValidationError = {\n  path: string;\n  message: string;\n  value?: any;\n};\n\nexport type SchemaRule =\n  | { type: \"string\"; minLength?: number; maxLength?: number; pattern?: RegExp }\n  | { type: \"number\"; min?: number; max?: number; integer?: boolean }\n  | { type: \"boolean\" }\n  | { type: \"array\"; items: SchemaRule; minItems?: number; maxItems?: number }\n  | { type: \"object\"; properties: Record<string, SchemaRule>; required?: string[] };\n\nexport type PrimitiveRule = { type: \"string\"; minLength?: number; maxLength?: number; pattern?: RegExp } | { type: \"number\"; min?: number; max?: number; integer?: boolean } | { type: \"boolean\" };\n\nexport function validateValue(value: any, rule: SchemaRule, path: string = \"\"): ValidationError[] {\n  const errs: ValidationError[] = [];\n  const add = (message: string, val?: any) => errs.push({ path, message, value: val ?? value });\n\n  switch (rule.type) {\n    case \"string\": {\n      if (typeof value !== \"string\") {\n        add(\"Expected string\");\n      } else {\n        if (typeof rule.minLength === \"number\" && value.length < rule.minLength) {\n          add(`String is shorter than minimum length ${rule.minLength}`);\n        }\n        if (typeof rule.maxLength === \"number\" && value.length > rule.maxLength) {\n          add(`String is longer than maximum length ${rule.maxLength}`);\n        }\n        if (rule.pattern && !rule.pattern.test(value)) {\n          add(\"String does not match required pattern\");\n        }\n      }\n      break;\n    }\n    case \"number\": {\n      if (typeof value !== \"number\" || Number.isNaN(value)) {\n        add(\"Expected number\");\n      } else {\n        if (typeof rule.min === \"number\" && value < rule.min) {\n          add(`Number is less than minimum ${rule.min}`);\n        }\n        if (typeof rule.max === \"number\" && value > rule.max) {\n          add(`Number is greater than maximum ${rule.max}`);\n        }\n        if (rule.integer && !Number.isInteger(value)) {\n          add(\"Expected integer\");\n        }\n      }\n      break;\n    }\n    case \"boolean\": {\n      if (typeof value !== \"boolean\") {\n        add(\"Expected boolean\");\n      }\n      break;\n    }\n    case \"array\": {\n      if (!Array.isArray(value)) {\n        add(\"Expected array\");\n      } else {\n        if (typeof rule.minItems === \"number\" && value.length < rule.minItems) {\n          errs.push({ path, message: `Array has fewer items (${value.length}) than minimum ${rule.minItems}`, value });\n        }\n        if (typeof rule.maxItems === \"number\" && value.length > rule.maxItems) {\n          errs.push({ path, message: `Array has more items (${value.length}) than maximum ${rule.maxItems}`, value });\n        }\n        for (let i = 0; i < value.length; i++) {\n          const childPath = path ? `${path}[${i}]` : `[${i}]`;\n          const child = validateValue(value[i], rule.items, childPath);\n          errs.push(...child);\n        }\n      }\n      break;\n    }\n    case \"object\": {\n      if (typeof value !== \"object\" || value === null || Array.isArray(value)) {\n        add(\"Expected object\");\n      } else {\n        // Check required properties\n        if (Array.isArray(rule.required)) {\n          for (const key of rule.required) {\n            if (!Object.prototype.hasOwnProperty.call(value, key)) {\n              errs.push({ path: path ? `${path}.${key}` : key, message: \"Missing required property\", value: undefined });\n            }\n          }\n        }\n        // Validate defined properties\n        for (const key of Object.keys(rule.properties)) {\n          const childValue = (value as any)[key];\n          const childRule = rule.properties[key];\n          const childPath = path ? `${path}.${key}` : key;\n          const childErrors = validateValue(childValue, childRule, childPath);\n          errs.push(...childErrors);\n        }\n      }\n      break;\n    }\n  }\n\n  return errs;\n}\n"
           }
         ]
       },
@@ -128,16 +194,20 @@
     }
   ],
   "modifiedFiles": [
-    "server/routes/health.js",
-    "server/index.js"
+    "src/middleware/validation.ts",
+    "src/schemas/validation/index.ts",
+    "src/schemas/validation/types.ts"
   ],
-  "rollbackPoint": "6ca40215e552648bb722c5868ea4ed20331c9e24",
+  "rollbackPoint": "748753515426cb0016ffab365dc0db0a31ccb1dd",
   "currentMilestone": 1,
   "partialSuccess": false,
   "reviewIssues": [
-    "Health payload missing version field per spec (needs 'version').",
-    "Health payload currently includes status, timestamp, uptime but not version; tests expect version.",
-    "No integration tests wired up yet (scaffold mentioned but not present in repo)."
+    "Plan mentions Zod-based validation; current implementation uses a custom runtime schema; consider migrating to Zod to align with Milestone 1 goal.",
+    "Binary artifact 'cloudflared-linux-amd64.deb.3' committed; should be moved to release assets or ignored via .gitignore.",
+    "Checkpoint JSON 'state/checkpoints/session-1770345104844.json' committed; noise; remove or relocate to ephemeral storage.",
+    "Milestones 2–5 scaffolding files (routeSchemas.ts, validationLoader.ts, errorFormatter.ts, etc.) are not present in the diff; wiring and per-route schemas appear unimplemented here.",
+    "Validation currently only checks req.body; per-route schemas for body, query, and params need to be implemented; plan suggests this multi-scope validation.",
+    "Optional fields handling and explicit support for optional nested objects lacking; consider a richer schema that marks optional vs required components."
   ],
   "codeQuality": 85,
   "testResults": {
