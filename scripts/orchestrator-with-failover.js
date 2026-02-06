@@ -533,12 +533,16 @@ async function testNode(state) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function saveCheckpoint(state) {
-  // Calculate progress if not already set
-  const progress = state.progress !== undefined
-    ? state.progress
-    : (state.totalMilestones > 0
-      ? Math.round((state.currentMilestone / state.totalMilestones) * 100)
-      : 0);
+  // Calculate progress if not already set or if it's NaN
+  let progress = state.progress;
+
+  if (progress === undefined || isNaN(progress)) {
+    if (state.totalMilestones > 0 && state.currentMilestone !== undefined) {
+      progress = Math.round((state.currentMilestone / state.totalMilestones) * 100);
+    } else {
+      progress = 0;
+    }
+  }
 
   const stateWithProgress = { ...state, progress };
 
