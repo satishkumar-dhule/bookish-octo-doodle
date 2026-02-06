@@ -11,6 +11,18 @@ const requestListener = (req, res) => {
     return healthHandler(req, res)
   }
 
+  // Milestone 2: status endpoint
+  if (req.url === '/status' && req.method === 'GET') {
+    const uptime = Math.floor(process.uptime())
+    const payload = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    return res.end(JSON.stringify(payload))
+  }
+
   // Milestone 3: root status endpoint
   if (req.url === '/' && req.method === 'GET') {
     const payload = {
