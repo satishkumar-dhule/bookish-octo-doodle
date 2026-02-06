@@ -1,0 +1,165 @@
+{
+  "ideaId": "006",
+  "ideaContent": "# Add Request Validation Middleware\n\n## Description\nImplement a reusable validation middleware that enforces request payload shapes across API endpoints by validating req.body, req.query, and req.params against predefined schemas before reaching business logic.\n\n## Context\nWithout consistent validation, APIs become error-prone, security risk, and hard to maintain. Centralized validation reduces runtime errors, improves security by rejecting unexpected data early, and provides uniform error messaging.\n\n## Acceptance Criteria\n- [ ] All API routes pass through a single, reusable validation middleware.\n- [ ] Schemas are defined centrally and per-route, validating body, query, and path parameters where applicable.\n- [ ] On validation failure, the API returns a 400 response with a structured error payload detailing invalid fields.\n- [ ] There are unit tests and integration tests covering valid and invalid inputs (missing fields, wrong types, nested shapes).\n- [ ] Sensitive data is not logged; error messages are sanitized and consistent across endpoints.\n\n## Technical Notes\nRecommended stack: Node.js with Express and TypeScript. Use a schema library (e.g., Zod) to define per-route schemas. Implement a generic middleware that reads a route's attached schema metadata (e.g., via route configuration) and validates req.body/req.query/req.params accordingly. Provide clear error formatting (field, message, value). Wire up in app.use for global endpoints or per-router basis. Add tests for valid payloads, invalid payloads, and edge cases (optional fields, defaults). Consider performance: compile schemas once; avoid runtime reflection in hot paths.\n\n## Priority\nMedium\n\n## Estimated Complexity\nMedium\n\n## Labels\nfeature\n\n---\n\n**Created:** 2026-02-06\n**ID:** 006\n",
+  "sessionId": "session-1770345104844",
+  "phase": "implementing",
+  "timeoutAt": 1770346484844,
+  "agentOutputs": {
+    "analysis": {
+      "understanding": "Implement a reusable Express validation middleware (using TypeScript) that enforces request payload shapes across API endpoints by validating req.body, req.query, and req.params against predefined schemas before business logic runs. Schemas are defined centrally, per-route, and attached to routes. On failure, return 400 with a structured error payload. Include unit/integration tests and ensure sensitive data is not logged and error messages are sanitized and consistent.",
+      "complexity": "medium",
+      "estimated_milestones": 3,
+      "requires_planning": true,
+      "confidence": 0.85,
+      "risks": [
+        "Schema-definition coupling: risk of tight coupling between route definitions and validation schemas; mitigate with a clean registry and a wrapper that injects schemas.",
+        "Performance: runtime schema validation can add overhead; mitigate by compiling/caching schemas once and avoiding reflection in hot paths.",
+        "Optional/default handling: ensuring optional fields, default values, and nested shapes map correctly without breaking existing logic.",
+        "Logging exposure: risk of logging sensitive fields from req.body; ensure sanitization and configurable redaction.",
+        "Error payload consistency: ensure a uniform error shape across endpoints and across nested validation errors."
+      ],
+      "questions": [
+        "Do you want Zod as the default schema library with a pluggable option for other validators in the future?",
+        "Should validation be global via app.use with a central registry, or per-route via a small wrapper (validatedRoute) that chains a single reusable validator with the actual handler?",
+        "Are there any fields or endpoints with known sensitive data that must always be redacted in logs and error payloads (e.g., passwords, tokens, SSNs)?"
+      ],
+      "approach": "High-level plan: 1) Establish a central schema registry keyed by route (method + path or route id) that stores optional body, query, and params schemas (Zod schemas). 2) Implement a single reusable validation middleware (factory) that, given a route's schemas, validates req.body, req.query, and req.params using safeParse, collecting field-level errors. 3) On validation failure, respond with 400 and a structured error payload: { errors: [ { field: 'body.name', message: 'Required', value: <sanitized> }, ... ] }. 4) Attach per-route schemas via a small helper wrapper (validatedRoute) or through a per-router local registry, ensuring all routes funnel through the same validation logic. 5) Compile/cache schemas to avoid per-request recompilation and minimize reflection in hot paths. 6) Add unit tests for valid/invalid inputs (missing fields, wrong types, nested shapes) and integration tests for end-to-end validation across endpoints. 7) Enforce sanitized error messages and ensure sensitive data is not logged; align with existing logging/monitoring standards. 8) Document the schema conventions and provide a short migration path for existing endpoints to adopt the new validation flow."
+    }
+  },
+  "totalMilestones": 5,
+  "userQuestion": null,
+  "needsUserInput": false,
+  "degradedMode": false,
+  "resourceUsage": {
+    "memory": {
+      "heapUsed": 12,
+      "heapTotal": 14,
+      "external": 2,
+      "rss": 64,
+      "percentage": 84
+    },
+    "cpu": {
+      "user": 398,
+      "system": 66
+    },
+    "disk": {
+      "total": "145G",
+      "used": "54G",
+      "available": "91G",
+      "percentage": 38
+    },
+    "healthy": true
+  },
+  "plan": {
+    "milestones": [
+      {
+        "name": "Milestone 1",
+        "description": "Establish core validation middleware and schema core using Zod; scaffold project structure and route wiring concepts.",
+        "files": {
+          "create": [
+            "src/middleware/validation.ts",
+            "src/schemas/validation/index.ts",
+            "src/schemas/validation/types.ts"
+          ],
+          "modify": [],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "tests/validation/middleware.unit.ts"
+        ],
+        "rollback": "Delete the newly added middleware and schema scaffolding files; revert any interface/type changes introduced for wiring."
+      },
+      {
+        "name": "Milestone 2",
+        "description": "Define per-route schemas and a route registration helper to attach schemas to routes; wire middleware into routes.",
+        "files": {
+          "create": [
+            "src/schemas/routeSchemas.ts",
+            "src/middleware/validationLoader.ts"
+          ],
+          "modify": [
+            "src/app.ts"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "tests/integration/middleware_attachment.test.ts"
+        ],
+        "rollback": "Revert route wiring changes and remove per-route schema scaffolding; ensure routes compile without middleware if rolled back."
+      },
+      {
+        "name": "Milestone 3",
+        "description": "Implement error formatting, sanitization, and logging controls; ensure 400 responses have structured payload.",
+        "files": {
+          "create": [
+            "src/middleware/errorFormatter.ts"
+          ],
+          "modify": [
+            "src/middleware/validation.ts"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "tests/validation/errorFormat.test.ts",
+          "tests/integration/validationResponse.test.ts"
+        ],
+        "rollback": "Revert changes to error handling and remove errorFormatter usage; ensure no residual sanitization logic remains."
+      },
+      {
+        "name": "Milestone 4",
+        "description": "End-to-end tests for valid and invalid inputs; cover body, query, and params; ensure performance notes.",
+        "files": {
+          "create": [
+            "tests/integration/validation.endtoend.test.ts"
+          ],
+          "modify": [],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "tests/integration/validation.endtoend.test.ts"
+        ],
+        "rollback": "Disable or revert integration tests and any mocks affecting endpoint validation flow."
+      },
+      {
+        "name": "Milestone 5",
+        "description": "Documentation, best practices, and cleanup; add example schemas and usage docs; review logging.",
+        "files": {
+          "create": [
+            "docs/validation.md"
+          ],
+          "modify": [
+            "README.md"
+          ],
+          "delete": []
+        },
+        "dependencies": [
+          "Milestone 1",
+          "Milestone 2",
+          "Milestone 3",
+          "Milestone 4"
+        ],
+        "tests": [],
+        "rollback": "Revert documentation changes if not desired; revert README edits."
+      }
+    ],
+    "risks": [
+      "Performance overhead from runtime validation on high-traffic endpoints.",
+      "Complexity in attaching per-route schemas to routes with dynamic paths.",
+      "Potential refactors required in existing routes to adopt the new middleware pattern."
+    ],
+    "success_criteria": [
+      "All API routes pass through a single reusable validation middleware.",
+      "Schemas are centrally defined and per-route; body, query, and params are validated when present.",
+      "Invalid inputs yield a 400 with structured error payload detailing invalid fields.",
+      "Unit and integration tests cover valid inputs, invalid inputs (missing fields, wrong types, nested shapes), and edge cases (optional fields, defaults).",
+      "Sensitive data is sanitized in error payloads and not logged."
+    ],
+    "estimated_time_minutes": 1320,
+    "confidence": 0.78
+  },
+  "progress": null
+}
