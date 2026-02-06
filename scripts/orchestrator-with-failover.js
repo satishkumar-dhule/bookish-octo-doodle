@@ -533,10 +533,19 @@ async function testNode(state) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function saveCheckpoint(state) {
-  const checkpointPath = path.join('state', 'checkpoints', `${state.sessionId}.json`);
+  // Calculate progress if not already set
+  const progress = state.progress !== undefined
+    ? state.progress
+    : (state.totalMilestones > 0
+      ? Math.round((state.currentMilestone / state.totalMilestones) * 100)
+      : 0);
+
+  const stateWithProgress = { ...state, progress };
+
+  const checkpointPath = path.join('state', 'checkpoints', `${stateWithProgress.sessionId}.json`);
   await fs.mkdir(path.dirname(checkpointPath), { recursive: true });
-  await fs.writeFile(checkpointPath, JSON.stringify(state, null, 2));
-  console.log(`💾 Checkpoint saved: ${state.phase} (${state.progress}%)`);
+  await fs.writeFile(checkpointPath, JSON.stringify(stateWithProgress, null, 2));
+  console.log(`💾 Checkpoint saved: ${stateWithProgress.phase} (${progress}%)`);
 }
 
 async function gracefulShutdown(reason) {
