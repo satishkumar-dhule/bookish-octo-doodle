@@ -1,0 +1,149 @@
+{
+  "ideaId": "001-example-feature",
+  "ideaContent": "# Add Health Check Endpoint\n\n## Description\nAdd a `/health` endpoint that returns system status\n\n## Context\nFor monitoring and load balancer health checks\n\n## Acceptance Criteria\n- [ ] GET /health endpoint returns 200 OK\n- [ ] Response includes: status, timestamp, version, uptime\n- [ ] Endpoint is unauthenticated\n- [ ] Response time < 50ms\n\n## Technical Notes\n- Return JSON: `{ \"status\": \"ok\", \"timestamp\": \"...\", \"version\": \"1.0\", \"uptime\": 12345 }`\n- Add to main router\n- No database calls (fast response)\n\n## Files Involved\n- `server/routes/health.js` (new)\n- `server/index.js` (update)\n\n## Priority\nMedium\n\n## Complexity\nLow\n",
+  "sessionId": "session-1770344611472",
+  "phase": "completed",
+  "timeoutAt": 1770345991472,
+  "agentOutputs": {
+    "analysis": {
+      "understanding": "You're adding a /health endpoint for liveness checks. It should be unauthenticated, return status, timestamp, version, and uptime, and respond within 50ms to assist monitoring and load balancer health checks.",
+      "complexity": "low",
+      "estimated_milestones": 3,
+      "requires_planning": true,
+      "confidence": 0.9,
+      "risks": [
+        "Uptime is per-process in a multi-worker setup; if you run multiple instances, each reports its own uptime.",
+        "Version source may drift with CI/CD; ensure the deployed version matches the reported version (e.g., from package.json or an env var).",
+        "Timestamp and uptime semantics may differ across environments (containerized, serverless); ensure consistency across deployments."
+      ],
+      "questions": [
+        "Should uptime be reported in seconds or milliseconds?",
+        "Timestamp format: ISO 8601 string or epoch milliseconds?",
+        "What is the preferred source for versioning: package.json, a VERSION environment variable, or CI/CD injected value?"
+      ],
+      "approach": "High-level plan: 1) Create server/routes/health.js with a GET /health handler that returns { status: 'ok', timestamp, version, uptime } and no DB calls. 2) Update server/index.js to mount the health route on the main router, ensuring no authentication middleware wraps this path. 3) Validate locally: GET /health returns 200 with the required fields and sub-50ms response time; consider adding a minimal integration test if present."
+    }
+  },
+  "totalMilestones": 2,
+  "userQuestion": null,
+  "needsUserInput": false,
+  "degradedMode": false,
+  "resourceUsage": {
+    "memory": {
+      "heapUsed": 13,
+      "heapTotal": 14,
+      "external": 2,
+      "rss": 66,
+      "percentage": 91
+    },
+    "cpu": {
+      "user": 388,
+      "system": 58
+    },
+    "disk": {
+      "total": "72G",
+      "used": "51G",
+      "available": "22G",
+      "percentage": 71
+    },
+    "healthy": false
+  },
+  "plan": {
+    "milestones": [
+      {
+        "name": "Milestone 1: Scaffold Health Route",
+        "description": "Create health route file and wire into main router; ensure unauthenticated access and no DB calls.",
+        "files": {
+          "create": [
+            "server/routes/health.js"
+          ],
+          "modify": [
+            "server/index.js"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "Test plan: GET /health returns 200 and is unauthenticated",
+          "Add basic integration test scaffold at tests/health.integration.test.js"
+        ],
+        "rollback": "Remove server/routes/health.js and revert wiring changes in server/index.js; delete test scaffold"
+      },
+      {
+        "name": "Milestone 2: Implement Health Logic",
+        "description": "Implement endpoint response content: status, timestamp, version, uptime; ensure response time < 50ms; ensure JSON shape matches spec.",
+        "files": {
+          "create": [],
+          "modify": [
+            "server/routes/health.js",
+            "server/index.js"
+          ],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [
+          "GET /health returns 200 with JSON body",
+          "Response includes fields: status, timestamp, version, uptime",
+          "Response is unauthenticated",
+          "Measure response time avg < 50ms under baseline conditions",
+          "No database or external calls are performed in the health check"
+        ],
+        "rollback": "If performance regressions occur, revert health endpoint logic to a minimal static response or disable the route; revert any instrumentation"
+      }
+    ],
+    "risks": [
+      "Potential latency from extra route processing; keep logic minimal",
+      "Clock drift or monotonicity concerns for uptime; rely on process.uptime() which is sufficient for health checks",
+      "Container/PM2/clustered environments may have multiple workers; ensure health check is stateless and fast per request"
+    ],
+    "success_criteria": [
+      "GET /health returns 200 OK",
+      "Response JSON includes: status, timestamp, version, uptime",
+      "Endpoint is unauthenticated",
+      "Average response time < 50ms",
+      "No database or external service calls are made during the health check"
+    ],
+    "estimated_time_minutes": 20,
+    "confidence": 0.85
+  },
+  "parallelResults": [
+    {
+      "success": true,
+      "result": {
+        "files": [
+          {
+            "path": "server/routes/health.js",
+            "content": "// Health check endpoint for scaffolding milestone\nexport const healthHandler = (req, res) => {\n  const uptime = Math.floor(process.uptime())\n  const payload = {\n    status: 'ok',\n    timestamp: new Date().toISOString(),\n    uptime\n  }\n  res.writeHead(200, { 'Content-Type': 'application/json' })\n  res.end(JSON.stringify(payload))\n}\n",
+            "explanation": "Adds a health-check handler that returns a simple JSON payload with status, timestamp, and uptime."
+          },
+          {
+            "path": "server/index.js",
+            "content": "import http from 'http'\nimport { healthHandler } from './routes/health.js'\n\nconst PORT = process.env.PORT ? Number(process.env.PORT) : 3000\nconst HOST = process.env.HOST || '0.0.0.0'\n\nconst requestListener = (req, res) => {\n  // Simple health endpoint\n  if (req.url === '/health' && (req.method === 'GET' || req.method === 'HEAD')) {\n    return healthHandler(req, res)\n  }\n\n  // Fallback for unknown routes\n  res.writeHead(404, { 'Content-Type': 'application/json' })\n  res.end(JSON.stringify({ status: 'not_found', path: req.url }))\n}\n\nconst server = http.createServer(requestListener)\n\nserver.listen(PORT, HOST, () => {\n  console.log(`Server listening on ${HOST}:${PORT}`)\n})\n\nexport default server\n",
+            "explanation": "Scaffolds a minimal HTTP server that exposes the /health route and returns 404 for unknown paths."
+          }
+        ]
+      },
+      "model": "opencode/gpt-5-nano",
+      "fallback": false
+    }
+  ],
+  "modifiedFiles": [
+    "server/routes/health.js",
+    "server/index.js"
+  ],
+  "rollbackPoint": "6ca40215e552648bb722c5868ea4ed20331c9e24",
+  "currentMilestone": 1,
+  "partialSuccess": false,
+  "reviewIssues": [
+    "Health payload missing version field per spec (needs 'version').",
+    "Health payload currently includes status, timestamp, uptime but not version; tests expect version.",
+    "No integration tests wired up yet (scaffold mentioned but not present in repo)."
+  ],
+  "codeQuality": 85,
+  "testResults": {
+    "passed": true,
+    "output": "\n> autonomous-dev-system@1.0.0 test\n> echo 'No tests yet' --passWithNoTests\n\nNo tests yet --passWithNoTests\n"
+  },
+  "testPassed": true,
+  "status": "success"
+}

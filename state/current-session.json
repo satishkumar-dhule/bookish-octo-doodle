@@ -1,120 +1,143 @@
 {
-  "ideaId": "005",
-  "ideaContent": "# Error Handling Utilities: Centralized Helpers\n\n## Description\nBuild a centralized error handling library that standardizes error creation, wrapping, normalization, and responses across the app stack. It should provide a reusable ApiError structure, helper utilities to wrap and normalize errors, a mapping to HTTP status codes, a sanitized error response formatter, and a logging adapter with redaction.\n\n## Context\nCurrently errors are scattered across modules with inconsistent shapes, which makes debugging harder, reduces observability, and risks leaking sensitive data. Centralizing error handling improves consistency, testability, and security, and lowers duplication when adding new services or APIs.\n\n## Acceptance Criteria\n- [ ] A central ApiError type with fields code, message, details optional, and cause optional is defined and used by new utilities\n- [ ] wrapError and normalizeError utilities preserve original stack traces and produce a standard error shape\n- [ ] HTTP status mapping and client safe error response formatter produce consistent JSON error bodies without leaking sensitive data\n- [ ] A logging adapter standardizes error logs and redacts sensitive fields, with integration hooks for common frameworks\n- [ ] Unit tests cover core utilities and error response formatting, achieving acceptable coverage\n\n## Technical Notes\nOrganize under errors/ with an ApiError type. Implement: interface ApiError { code: string; message: string; details?: any; cause?: Error | string; stack?: string } ; class ExtendedError extends Error { code; details; cause } ; functions: wrapError(err, code, message, details?), normalizeError(err): ApiError, toHttpStatus(err): number, formatErrorResponse(err, options?): ApiErrorResponse; logger: logError(err, context) that redacts sensitive fields; middleware: errorHandler for Express and Koa; provide tests and CI coverage. Ensure no stack traces leaked in production; enable verbose traces in dev. Consider integration with Express, NestJS, GraphQL, and serverless runtimes.\n\n## Priority\nHigh\n\n## Estimated Complexity\nMedium\n\n## Labels\nfeature, backend, error-handling\n\n---\n\n**Created:** 2026-02-06\n**ID:** 005\n",
-  "sessionId": "session-1770344330001",
+  "ideaId": "001-example-feature",
+  "ideaContent": "# Add Health Check Endpoint\n\n## Description\nAdd a `/health` endpoint that returns system status\n\n## Context\nFor monitoring and load balancer health checks\n\n## Acceptance Criteria\n- [ ] GET /health endpoint returns 200 OK\n- [ ] Response includes: status, timestamp, version, uptime\n- [ ] Endpoint is unauthenticated\n- [ ] Response time < 50ms\n\n## Technical Notes\n- Return JSON: `{ \"status\": \"ok\", \"timestamp\": \"...\", \"version\": \"1.0\", \"uptime\": 12345 }`\n- Add to main router\n- No database calls (fast response)\n\n## Files Involved\n- `server/routes/health.js` (new)\n- `server/index.js` (update)\n\n## Priority\nMedium\n\n## Complexity\nLow\n",
+  "sessionId": "session-1770344611472",
   "phase": "completed",
-  "timeoutAt": 1770345710001,
+  "timeoutAt": 1770345991472,
   "agentOutputs": {
     "analysis": {
-      "milestones": [
-        {
-          "name": "Analyze requirements",
-          "description": "Review and understand the requirements",
-          "files": {
-            "create": [],
-            "modify": [],
-            "delete": []
-          },
-          "dependencies": [],
-          "tests": [],
-          "rollback": "No changes yet"
-        },
-        {
-          "name": "Implement changes",
-          "description": "Make the necessary code changes",
-          "files": {
-            "create": [],
-            "modify": [],
-            "delete": []
-          },
-          "dependencies": [],
-          "tests": [],
-          "rollback": "Revert commits"
-        }
-      ],
+      "understanding": "You're adding a /health endpoint for liveness checks. It should be unauthenticated, return status, timestamp, version, and uptime, and respond within 50ms to assist monitoring and load balancer health checks.",
+      "complexity": "low",
+      "estimated_milestones": 3,
+      "requires_planning": true,
+      "confidence": 0.9,
       "risks": [
-        "AI planner unavailable - using template"
+        "Uptime is per-process in a multi-worker setup; if you run multiple instances, each reports its own uptime.",
+        "Version source may drift with CI/CD; ensure the deployed version matches the reported version (e.g., from package.json or an env var).",
+        "Timestamp and uptime semantics may differ across environments (containerized, serverless); ensure consistency across deployments."
       ],
-      "success_criteria": [
-        "Changes implemented",
-        "Tests pass"
+      "questions": [
+        "Should uptime be reported in seconds or milliseconds?",
+        "Timestamp format: ISO 8601 string or epoch milliseconds?",
+        "What is the preferred source for versioning: package.json, a VERSION environment variable, or CI/CD injected value?"
       ],
-      "estimated_time_minutes": 30,
-      "confidence": 0.5
+      "approach": "High-level plan: 1) Create server/routes/health.js with a GET /health handler that returns { status: 'ok', timestamp, version, uptime } and no DB calls. 2) Update server/index.js to mount the health route on the main router, ensuring no authentication middleware wraps this path. 3) Validate locally: GET /health returns 200 with the required fields and sub-50ms response time; consider adding a minimal integration test if present."
     }
   },
   "totalMilestones": 2,
   "userQuestion": null,
   "needsUserInput": false,
-  "degradedMode": true,
+  "degradedMode": false,
   "resourceUsage": {
     "memory": {
-      "heapUsed": 12,
+      "heapUsed": 13,
       "heapTotal": 14,
       "external": 2,
-      "rss": 65,
-      "percentage": 90
+      "rss": 66,
+      "percentage": 91
     },
     "cpu": {
-      "user": 437,
-      "system": 101
+      "user": 388,
+      "system": 58
     },
     "disk": {
-      "total": "145G",
-      "used": "54G",
-      "available": "91G",
-      "percentage": 38
+      "total": "72G",
+      "used": "51G",
+      "available": "22G",
+      "percentage": 71
     },
-    "healthy": true
+    "healthy": false
   },
   "plan": {
     "milestones": [
       {
-        "name": "Analyze requirements",
-        "description": "Review and understand the requirements",
+        "name": "Milestone 1: Scaffold Health Route",
+        "description": "Create health route file and wire into main router; ensure unauthenticated access and no DB calls.",
         "files": {
-          "create": [],
-          "modify": [],
+          "create": [
+            "server/routes/health.js"
+          ],
+          "modify": [
+            "server/index.js"
+          ],
           "delete": []
         },
         "dependencies": [],
-        "tests": [],
-        "rollback": "No changes yet"
+        "tests": [
+          "Test plan: GET /health returns 200 and is unauthenticated",
+          "Add basic integration test scaffold at tests/health.integration.test.js"
+        ],
+        "rollback": "Remove server/routes/health.js and revert wiring changes in server/index.js; delete test scaffold"
       },
       {
-        "name": "Implement changes",
-        "description": "Make the necessary code changes",
+        "name": "Milestone 2: Implement Health Logic",
+        "description": "Implement endpoint response content: status, timestamp, version, uptime; ensure response time < 50ms; ensure JSON shape matches spec.",
         "files": {
           "create": [],
-          "modify": [],
+          "modify": [
+            "server/routes/health.js",
+            "server/index.js"
+          ],
           "delete": []
         },
         "dependencies": [],
-        "tests": [],
-        "rollback": "Revert commits"
+        "tests": [
+          "GET /health returns 200 with JSON body",
+          "Response includes fields: status, timestamp, version, uptime",
+          "Response is unauthenticated",
+          "Measure response time avg < 50ms under baseline conditions",
+          "No database or external calls are performed in the health check"
+        ],
+        "rollback": "If performance regressions occur, revert health endpoint logic to a minimal static response or disable the route; revert any instrumentation"
       }
     ],
     "risks": [
-      "AI planner unavailable - using template"
+      "Potential latency from extra route processing; keep logic minimal",
+      "Clock drift or monotonicity concerns for uptime; rely on process.uptime() which is sufficient for health checks",
+      "Container/PM2/clustered environments may have multiple workers; ensure health check is stateless and fast per request"
     ],
     "success_criteria": [
-      "Changes implemented",
-      "Tests pass"
+      "GET /health returns 200 OK",
+      "Response JSON includes: status, timestamp, version, uptime",
+      "Endpoint is unauthenticated",
+      "Average response time < 50ms",
+      "No database or external service calls are made during the health check"
     ],
-    "estimated_time_minutes": 30,
-    "confidence": 0.5
+    "estimated_time_minutes": 20,
+    "confidence": 0.85
   },
-  "parallelResults": [],
-  "modifiedFiles": [],
-  "rollbackPoint": "ae584d4549f5aaf088156211e50e6114b958b7e7",
+  "parallelResults": [
+    {
+      "success": true,
+      "result": {
+        "files": [
+          {
+            "path": "server/routes/health.js",
+            "content": "// Health check endpoint for scaffolding milestone\nexport const healthHandler = (req, res) => {\n  const uptime = Math.floor(process.uptime())\n  const payload = {\n    status: 'ok',\n    timestamp: new Date().toISOString(),\n    uptime\n  }\n  res.writeHead(200, { 'Content-Type': 'application/json' })\n  res.end(JSON.stringify(payload))\n}\n",
+            "explanation": "Adds a health-check handler that returns a simple JSON payload with status, timestamp, and uptime."
+          },
+          {
+            "path": "server/index.js",
+            "content": "import http from 'http'\nimport { healthHandler } from './routes/health.js'\n\nconst PORT = process.env.PORT ? Number(process.env.PORT) : 3000\nconst HOST = process.env.HOST || '0.0.0.0'\n\nconst requestListener = (req, res) => {\n  // Simple health endpoint\n  if (req.url === '/health' && (req.method === 'GET' || req.method === 'HEAD')) {\n    return healthHandler(req, res)\n  }\n\n  // Fallback for unknown routes\n  res.writeHead(404, { 'Content-Type': 'application/json' })\n  res.end(JSON.stringify({ status: 'not_found', path: req.url }))\n}\n\nconst server = http.createServer(requestListener)\n\nserver.listen(PORT, HOST, () => {\n  console.log(`Server listening on ${HOST}:${PORT}`)\n})\n\nexport default server\n",
+            "explanation": "Scaffolds a minimal HTTP server that exposes the /health route and returns 404 for unknown paths."
+          }
+        ]
+      },
+      "model": "opencode/gpt-5-nano",
+      "fallback": false
+    }
+  ],
+  "modifiedFiles": [
+    "server/routes/health.js",
+    "server/index.js"
+  ],
+  "rollbackPoint": "6ca40215e552648bb722c5868ea4ed20331c9e24",
   "currentMilestone": 1,
   "partialSuccess": false,
   "reviewIssues": [
-    "Do not commit binary artifacts (.deb) to repo; remove cloudflared-linux-amd64.deb.1 from version control and move assets to release artifacts or a dedicated artifacts/ folder with proper gitignore.",
-    "The added file state/checkpoints/session-1770344330001.json appears to contain planning data; consider storing planning artifacts outside the main branch or in a docs/experiments folder; ensure no sensitive data leaks.",
-    "No actual implementation changes were made to the error handling utilities; only planning and checkpoint data were added; implement a code scaffold for the central error handling module.",
-    "Tests are not present in the changes; add unit tests for ApiError type, wrapError, normalizeError, and formatErrorResponse.",
-    "If this is a coding task, ensure code style, TypeScript types, and linting are configured; consider adding a minimal README for the errors module."
+    "Health payload missing version field per spec (needs 'version').",
+    "Health payload currently includes status, timestamp, uptime but not version; tests expect version.",
+    "No integration tests wired up yet (scaffold mentioned but not present in repo)."
   ],
   "codeQuality": 85,
   "testResults": {
