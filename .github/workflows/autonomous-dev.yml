@@ -154,8 +154,12 @@ jobs:
 
           # Check if there are changes
           if ! git diff --staged --quiet; then
-            # Get milestone from state
-            MILESTONE=$(node -e "const s=require('./state/current-session.json');console.log(s.milestone||'Progress update')")
+            # Get milestone from state (with fallback if file doesn't exist)
+            if [ -f "state/current-session.json" ]; then
+              MILESTONE=$(node -e "const s=require('./state/current-session.json');console.log(s.milestone||'Progress update')")
+            else
+              MILESTONE="Progress update"
+            fi
 
             git commit -m "🤖 Auto: $MILESTONE [skip ci]"
             git push origin dev

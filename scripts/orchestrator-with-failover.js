@@ -570,15 +570,15 @@ export function createAutonomousDevGraph() {
 
   // Add nodes (using enhanced versions)
   graph.addNode('analyze_idea', analyzeIdeaNode);
-  graph.addNode('plan', planNode);
+  graph.addNode('create_plan', planNode);
   graph.addNode('parallel_implementation', parallelImplementationNode);
   graph.addNode('review_code', reviewCodeNode);
   graph.addNode('test', testNode);
 
   // Add edges (same as before)
   graph.addEdge(START, 'analyze_idea');
-  graph.addEdge('analyze_idea', 'plan');
-  graph.addEdge('plan', 'parallel_implementation');
+  graph.addEdge('analyze_idea', 'create_plan');
+  graph.addEdge('create_plan', 'parallel_implementation');
   graph.addEdge('parallel_implementation', 'review_code');
   graph.addEdge('review_code', 'test');
   graph.addEdge('test', END);
