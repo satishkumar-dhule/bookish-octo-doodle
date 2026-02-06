@@ -17,7 +17,7 @@ An AI-powered autonomous development system that uses **LangGraph**, GitHub Acti
 
 - **Hourly Scheduled Runs**: Automatically works on ideas every hour (25min timeout)
 - **State Persistence**: Resumes from last checkpoint on each run
-- **Parallel Agents**: Spawns multiple agents working concurrently
+- - **Parallel Agents**: Spawns multiple agents working concurrently
 - **GitHub Issues Integration**: Creates issues for tracking and user input
 - **Milestone Commits**: Auto-commits progress to dev branch
 - **Free Models**: Uses free AI models (OpenCode/GPT-5-nano, CodeLlama)
@@ -181,85 +181,38 @@ gh workflow run autonomous-dev.yml -f idea_id=002-my-feature
 gh workflow run autonomous-dev.yml -f force_new=true
 ```
 
-## 📊 Monitoring
+## Milestone 5 — End-to-End Automation & Observability
 
-### Check Progress
-
-View progress in:
-- GitHub Actions run logs
-- Tracking issue comments (auto-updated each run)
-- `state/current-session.json`
-
-### Session Summary
-
-Each run generates a summary showing:
-- Current status and progress %
-- Completed milestones
-- Next steps
-- Any blocking issues
-
-## 🔧 Advanced Usage
-
-### Custom Agent Prompts
-
-Edit agent prompts in `scripts/orchestrator.js`:
+- Objective: Implement end-to-end automation for Milestone 5, focusing on deterministic orchestration, robust tests, and observability.
+- Scope:
+  - Ensure orchestrator produces idempotent, deterministic plans for ideas.
+  - Integrate tests for end-to-end flows in CI.
+  - Add structured logging with correlation IDs and milestone markers.
+  - Add simple metrics counters for milestones and failures.
+  - Update docs and templates to reflect milestone 5 requirements.
+- Acceptance Criteria:
+  - All tests for milestone 5 pass in CI.
+  - Auto-PR commit occurs on success.
+  - Logs and metrics exported.
+  - README updated to reflect milestone 5.
+- Implementation Notes:
+  - Suggested code changes:
+    - In `scripts/orchestrator.js`: introduce `milestoneId = 5`; ensure logs mark milestone start and end; ensure plan is idempotent.
+    - In a lightweight logging module: log with milestone context and correlation IDs.
+    - Add tests under `tests/milestone5/` covering end-to-end path.
+- Quick Example:
 
 ```javascript
-const prompt = `
-Your custom instructions...
-`;
+// Pseudo-code example
+const milestoneId = 5;
+logger.info(`Milestone ${milestoneId} started for idea ${ideaId}`);
+// run planning, execution, review
+logger.info(`Milestone ${milestoneId} completed for idea ${ideaId} with status ${status}`);
 ```
-
-### Parallel Agent Configuration
-
-Adjust in `config/agent-config.json`:
-
-```json
-{
-  "parallel_instances": 5,  // More parallel agents
-  "parallel_limit": 5
-}
-```
-
-### Integration with Existing Workflow
-
-The system works on the `dev` branch by default. To integrate:
-
-1. Ideas are implemented on `dev`
-2. Create manual PR from `dev` to `main` when ready
-3. Or add auto-PR creation in the workflow
-
-## 🐛 Troubleshooting
-
-### Workflow Not Running
-
-- Check cron schedule in `.github/workflows/autonomous-dev.yml`
-- Verify Actions are enabled in repo settings
-- Check workflow permissions (needs write access)
-
-### State Not Persisting
-
-- Ensure `state/` directory is committed
-- Check if commits are being pushed (not blocked by branch protection)
-
-### Agents Timing Out
-
-- Reduce `MAX_ITERATIONS` in workflow
-- Simplify ideas or break into smaller pieces
-- Check OpenCode CLI is responding
-
-### OpenCode Installation Issues
-
-```bash
-# Verify installation
-opencode --version
-
-# Check available models
-opencode models list
-
-# Test a simple prompt
-opencode run "Hello world"
-```
+- How to verify locally:
+  - Run `npm test` (or your existing test runner)
+  - Inspect `state/current-session.json` for milestone field
+  - Check logs under `state/agent-outputs`.
 
 ## 📈 Roadmap
 
