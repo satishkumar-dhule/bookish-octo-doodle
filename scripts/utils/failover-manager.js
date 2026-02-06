@@ -16,21 +16,21 @@ import { spawn } from 'child_process';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MODEL_HIERARCHY = {
-  // Primary models with fallbacks - using FREE opencode models (matching reference project)
+  // Primary models with fallbacks - using FREE opencode models
   planner: [
     { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
-    { model: 'opencode/gpt-4o-mini', priority: 2, speed: 'fast', quality: 'very-good' },
-    { model: 'opencode/claude-3-haiku-20240307', priority: 3, speed: 'very-fast', quality: 'good' }
+    { model: 'opencode/trinity-large-preview-free', priority: 2, speed: 'fast', quality: 'good' },
+    { model: 'opencode/glm-4.7-free', priority: 3, speed: 'fast', quality: 'good' }
   ],
   coder: [
     { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
-    { model: 'opencode/gpt-4o-mini', priority: 2, speed: 'fast', quality: 'very-good' },
-    { model: 'opencode/claude-3-haiku-20240307', priority: 3, speed: 'very-fast', quality: 'good' }
+    { model: 'opencode/grok-code', priority: 2, speed: 'fast', quality: 'good' },
+    { model: 'opencode/trinity-large-preview-free', priority: 3, speed: 'fast', quality: 'good' }
   ],
   reviewer: [
     { model: 'opencode/gpt-5-nano', priority: 1, speed: 'fast', quality: 'good' },
-    { model: 'opencode/gpt-4o-mini', priority: 2, speed: 'fast', quality: 'very-good' },
-    { model: 'opencode/claude-3-haiku-20240307', priority: 3, speed: 'very-fast', quality: 'good' }
+    { model: 'opencode/trinity-large-preview-free', priority: 2, speed: 'fast', quality: 'good' },
+    { model: 'opencode/minimax-m2.1-free', priority: 3, speed: 'fast', quality: 'good' }
   ]
 };
 
