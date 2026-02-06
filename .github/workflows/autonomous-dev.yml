@@ -20,7 +20,7 @@ jobs:
   autonomous_work:
     name: 🚀 Autonomous Dev Session
     runs-on: ubuntu-latest
-    timeout-minutes: 25  # 25-minute timeout
+    timeout-minutes: 50  # 50-minute timeout (includes 20-min web wait)
     permissions:
       contents: write
       issues: write
@@ -121,19 +121,33 @@ jobs:
           done
         id: opencode_web
 
-      - name: 💡 Create Idea from Vibe
-        id: create_idea
-        if: ${{ inputs.vibe != '' }}
+      - name: 🔍 Select Idea to Work On
+        id: select_idea
         run: |
-          echo "🎨 Creating idea from vibe: ${{ inputs.vibe }}"
-          OUTPUT_JSON=true node scripts/create-idea.js "${{ inputs.vibe }}" > /tmp/idea-output.txt
-
-          # Extract JSON output
-          IDEA_JSON=$(tail -n 1 /tmp/idea-output.txt)
-          IDEA_ID=$(echo $IDEA_JSON | jq -r '.ideaId')
+          if [ -n "${{ inputs.vibe }}" ]; then
+            # Create new idea from vibe
+            echo "🎨 Creating idea from vibe: ${{ inputs.vibe }}"
+            OUTPUT_JSON=true node scripts/create-idea.js "${{ inputs.vibe }}" > /tmp/idea-output.txt
+            IDEA_JSON=$(tail -n 1 /tmp/idea-output.txt)
+            IDEA_ID=$(echo $IDEA_JSON | jq -r '.ideaId')
+            echo "✅ Created new idea: $IDEA_ID"
+          elif [ -n "${{ inputs.idea_id }}" ]; then
+            # Use specified idea ID
+            IDEA_ID="${{ inputs.idea_id }}"
+            echo "✅ Using specified idea: $IDEA_ID"
+          else
+            # Select first available idea from backlog
+            IDEA_FILE=$(ls ideas/backlog/*.md | grep -E '^ideas/backlog/[0-9]{3}-' | head -1)
+            if [ -n "$IDEA_FILE" ]; then
+              IDEA_ID=$(basename "$IDEA_FILE" | sed 's/-.*$//')
+              echo "✅ Selected existing idea: $IDEA_ID"
+            else
+              echo "❌ No ideas found in backlog"
+              exit 1
+            fi
+          fi
 
           echo "idea_id=$IDEA_ID" >> $GITHUB_OUTPUT
-          echo "✅ Created idea with ID: $IDEA_ID"
 
       - name: 💾 Commit New Idea
         if: ${{ inputs.vibe != '' }}
@@ -145,6 +159,8 @@ jobs:
             git commit -m "🤖 Auto: Add idea from vibe [skip ci]"
             git push origin dev
             echo "✅ Idea committed and pushed"
+          else
+            echo "⏭️ No new idea to commit"
           fi
 
       - name: 🔄 Pull Latest Changes
@@ -171,9 +187,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GHTOKEN}}
           MODEL: ${{ vars.MODEL || 'opencode/gpt-5-nano' }}  # OpenCode models via OpenClaw
           OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL || 'opencode/gpt-5-nano' }}  # Fallback
-          IDEA_ID: ${{ steps.create_idea.outputs.idea_id || inputs.idea_id }}
+          IDEA_ID: ${{ steps.select_idea.outputs.idea_id }}
           RESUME: ${{ steps.resume.outputs.resume }}
-          TIMEOUT_MINUTES: 23  # Leave 2min buffer for cleanup
+          TIMEOUT_MINUTES: 25  # Allow more time for all milestones
         run: node scripts/orchestrator-with-failover.js
 
       - name: 💾 Commit Progress
@@ -233,6 +249,23 @@ jobs:
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+      - name: ⏰ Keep OpenCode Web Accessible
+        if: always()
+        run: |
+          echo "🌐 OpenCode Web URL: ${{ env.OPENCODE_WEB_URL }}"
+          echo "⏰ Keeping web interface alive for 20 minutes..."
+          echo "🔗 You can access the web interface at the URL above"
+          echo ""
+
+          # Display time remaining every minute
+          for i in {1..20}; do
+            REMAINING=$((21 - i))
+            echo "⏳ Time remaining: ${REMAINING} minutes ($(date -u +'%H:%M:%S UTC'))"
+            sleep 60
+          done
+
+          echo "✅ 20-minute wait completed"
 
       - name: 🛑 Stop OpenCode Web & Cloudflared
         if: always()
