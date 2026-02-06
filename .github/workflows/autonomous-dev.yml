@@ -25,6 +25,9 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    env:
+      OPEN_CODE_MODELS_DIR: ${{ github.workspace }}/opencode-models
+      OPEN_CODE_MODELS_URLS: ${{ secrets.OPEN_CODE_MODELS_URLS }}
 
     steps:
       - name: 📥 Checkout
@@ -39,6 +42,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Cache OpenCode Models\n        uses: actions/cache@v4\n        with:\n          path: ${{ env.OPEN_CODE_MODELS_DIR }}\n          key: opencode-models-${{ runner.os }}-${{ github.sha }}\n          restore-keys: opencode-models-${{ runner.os }}-\n\n      - name: 🗂 Setup OpenCode Models\n        run: bash scripts/setup-opencode-models.sh
+        env:
+          OPEN_CODE_MODELS_DIR: ${{ env.OPEN_CODE_MODELS_DIR }}
+          OPEN_CODE_MODELS_URLS: ${{ env.OPEN_CODE_MODELS_URLS }}
+
       - name: 📦 Install Dependencies
         run: npm ci
 
@@ -52,20 +60,12 @@ jobs:
 
           # Create openclaw alias pointing to opencode for backward compatibility
           echo '#!/bin/bash' | sudo tee /usr/local/bin/openclaw > /dev/null
-          echo 'exec opencode "$@"' | sudo tee -a /usr/local/bin/openclaw > /dev/null
+          echo 'exec opencode "$@"' | sudo tee -a /dev/null 2>/dev/null || true
           sudo chmod +x /usr/local/bin/openclaw
 
           echo "✅ OpenCode AI installed successfully"
 
-      - name: 🌐 Install Cloudflared
-        run: |
-          # Download and install cloudflared
-          wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared-linux-amd64.deb
-          cloudflared --version
-          echo "✅ Cloudflared installed"
-
-      - name: 🚀 Start OpenCode Web Server
+      - name: 🌐 Start OpenCode Web Server
         run: |
           # Start opencode web in background
           nohup opencode web --port 3000 > /tmp/opencode-web.log 2>&1 &
@@ -73,70 +73,19 @@ jobs:
           echo $WEB_PID > /tmp/opencode-web.pid
           echo "🚀 OpenCode web server started (PID: $WEB_PID)"
 
-          # Wait and verify server is running
-          echo "⏳ Waiting for web server to be ready..."
-          for i in {1..30}; do
-            if curl -s http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Web server is responding on port 3000"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Web server failed to start"
-              cat /tmp/opencode-web.log
-              exit 1
-            fi
-            sleep 1
-          done
-
-          # Start cloudflared tunnel in background
-          nohup cloudflared tunnel --url http://localhost:3000 > /tmp/cloudflared.log 2>&1 &
-          TUNNEL_PID=$!
-          echo $TUNNEL_PID > /tmp/cloudflared.pid
-          echo "🌐 Cloudflared tunnel started (PID: $TUNNEL_PID)"
-
-          # Wait for tunnel to establish and extract URL
-          echo "⏳ Waiting for tunnel to establish..."
-          for i in {1..30}; do
-            TUNNEL_URL=$(grep -o 'https://[^[:space:]]*\.trycloudflare\.com' /tmp/cloudflared.log 2>/dev/null | head -1)
-            if [ -n "$TUNNEL_URL" ]; then
-              echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
-              echo "🌐 OpenCode Web accessible at: $TUNNEL_URL"
-              echo "OPENCODE_WEB_URL=$TUNNEL_URL" >> $GITHUB_ENV
-
-              # Verify tunnel is working
-              sleep 2
-              if curl -s "$TUNNEL_URL" > /dev/null 2>&1; then
-                echo "✅ Tunnel is accessible and working"
-              else
-                echo "⚠️ Tunnel URL generated but not yet accessible (may need more time)"
-              fi
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Tunnel URL not found in logs"
-              cat /tmp/cloudflared.log
-              exit 1
-            fi
-            sleep 1
-          done
-        id: opencode_web
-
       - name: 🔍 Select Idea to Work On
         id: select_idea
         run: |
           if [ -n "${{ inputs.vibe }}" ]; then
-            # Create new idea from vibe
             echo "🎨 Creating idea from vibe: ${{ inputs.vibe }}"
             OUTPUT_JSON=true node scripts/create-idea.js "${{ inputs.vibe }}" > /tmp/idea-output.txt
             IDEA_JSON=$(tail -n 1 /tmp/idea-output.txt)
             IDEA_ID=$(echo $IDEA_JSON | jq -r '.ideaId')
             echo "✅ Created new idea: $IDEA_ID"
           elif [ -n "${{ inputs.idea_id }}" ]; then
-            # Use specified idea ID
             IDEA_ID="${{ inputs.idea_id }}"
             echo "✅ Using specified idea: $IDEA_ID"
           else
-            # Select first available idea from backlog
             IDEA_FILE=$(ls ideas/backlog/*.md | grep -E '^ideas/backlog/[0-9]{3}-' | head -1)
             if [ -n "$IDEA_FILE" ]; then
               IDEA_ID=$(basename "$IDEA_FILE" | sed 's/-.*$//')
@@ -149,78 +98,27 @@ jobs:
 
           echo "idea_id=$IDEA_ID" >> $GITHUB_OUTPUT
 
-      - name: 💾 Commit New Idea
-        if: ${{ inputs.vibe != '' }}
-        run: |
-          git config --local user.email "satishkumar.dhule@gmail.com"
-          git config --local user.name "satishkumar-dhule"
-          git add ideas/backlog/
-          if ! git diff --staged --quiet; then
-            git commit -m "🤖 Auto: Add idea from vibe [skip ci]"
-
-            # Pull latest changes before pushing
-            git pull --rebase origin dev || true
-
-            git push origin dev
-            echo "✅ Idea committed and pushed"
-          else
-            echo "⏭️ No new idea to commit"
-          fi
-
-      - name: 🔄 Pull Latest Changes
-        run: |
-          git pull origin dev --rebase
-          echo "✅ Latest changes pulled"
-
-      - name: 🔍 Resume from Last State
-        id: resume
-        run: |
-          if [ "${{ inputs.force_new }}" == "true" ]; then
-            echo "🆕 Starting fresh session"
-            echo "resume=false" >> $GITHUB_OUTPUT
-          elif [ -f "state/current-session.json" ]; then
-            echo "📂 Resuming from previous session"
-            echo "resume=true" >> $GITHUB_OUTPUT
-          else
-            echo "🆕 No previous state found"
-            echo "resume=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: 🎯 Run Autonomous Orchestrator (LangGraph + Failover)
+      - name: 🎯 Run Autonomous Orchestrator (Pure OpenCode AI)
         env:
-          GITHUB_TOKEN: ${{ secrets.GHTOKEN}}
-          MODEL: ${{ vars.MODEL || 'opencode/gpt-5-nano' }}  # OpenCode models via OpenClaw
+          GITHUB_TOKEN: ${{ secrets.GHTOKEN }}
+          MODEL: ${{ vars.MODEL || 'opencode/gpt-5-nano' }}  # OpenCode models (no LangGraph)
           OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL || 'opencode/gpt-5-nano' }}  # Fallback
           IDEA_ID: ${{ steps.select_idea.outputs.idea_id }}
-          RESUME: ${{ steps.resume.outputs.resume }}
           TIMEOUT_MINUTES: 25  # Allow more time for all milestones
-        run: node scripts/orchestrator-with-failover.js
+          OPEN_CODE_MODELS_DIR: ${{ env.OPEN_CODE_MODELS_DIR }}
+        run: node scripts/orchestrator-opencode.js
 
       - name: 💾 Commit Progress
         if: always()
         run: |
-          git config --local user.email "satishkumar.dhule@gmail.com"
-          git config --local user.name "satishkumar-dhule"
+          git config --local user.email "ci@example.com"
+          git config --local user.name "CI Bot"
 
-          # Stage all changes
           git add -A
-
-          # Check if there are changes
           if ! git diff --staged --quiet; then
-            # Get milestone from state (with fallback if file doesn't exist)
-            if [ -f "state/current-session.json" ]; then
-              MILESTONE=$(node -e "const s=require('./state/current-session.json');console.log(s.milestone||'Progress update')")
-            else
-              MILESTONE="Progress update"
-            fi
-
-            git commit -m "🤖 Auto: $MILESTONE [skip ci]"
-
-            # Pull latest changes before pushing
+            git commit -m "🤖 Auto: CI progress update [skip ci]"
             git pull --rebase origin dev || true
-
             git push origin dev
-            echo "✅ Committed and pushed to dev"
           else
             echo "⏭️ No changes to commit"
           fi
@@ -236,25 +134,9 @@ jobs:
         run: |
           echo "## 🤖 Autonomous Dev Session Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
           if [ -n "${{ env.OPENCODE_WEB_URL }}" ]; then
-            echo "🌐 **OpenCode Web**: [${{ env.OPENCODE_WEB_URL }}](${{ env.OPENCODE_WEB_URL }})" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🌐 OpenCode Web: [${{ env.OPENCODE_WEB_URL }}](${{ env.OPENCODE_WEB_URL }})" >> $GITHUB_STEP_SUMMARY
           fi
-
-          if [ -f "state/current-session.json" ]; then
-            node -e "
-              const s = require('./state/current-session.json');
-              console.log(\`**Idea:** \${s.ideaId || 'N/A'}\`);
-              console.log(\`**Status:** \${s.status || 'unknown'}\`);
-              console.log(\`**Progress:** \${s.progress || 0}%\`);
-              console.log(\`**Phase:** \${s.phase || 'N/A'}\`);
-              console.log(\`**Milestones:** \${s.currentMilestone || 0}/\${s.totalMilestones || 0}\`);
-            " >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No session state found" >> $GITHUB_STEP_SUMMARY
-          fi
-
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
 
@@ -263,39 +145,10 @@ jobs:
         run: |
           echo "🌐 OpenCode Web URL: ${{ env.OPENCODE_WEB_URL }}"
           echo "⏰ Keeping web interface alive for 20 minutes..."
-          echo "🔗 You can access the web interface at the URL above"
-          echo ""
+          for i in {1..20}; do echo "⏳ $i"; sleep 60; done
 
-          # Display time remaining every minute
-          for i in {1..20}; do
-            REMAINING=$((21 - i))
-            echo "⏳ Time remaining: ${REMAINING} minutes ($(date -u +'%H:%M:%S UTC'))"
-            sleep 60
-          done
-
-          echo "✅ 20-minute wait completed"
-
-      - name: 🛑 Stop OpenCode Web & Cloudflared
+      - name: 🛑 Stop OpenCode Web & Cloudflare
         if: always()
         run: |
-          # Stop cloudflared tunnel
-          if [ -f /tmp/cloudflared.pid ]; then
-            kill $(cat /tmp/cloudflared.pid) 2>/dev/null || true
-            echo "✅ Cloudflared tunnel stopped"
-          fi
-
-          # Stop opencode web server
-          if [ -f /tmp/opencode-web.pid ]; then
-            kill $(cat /tmp/opencode-web.pid) 2>/dev/null || true
-            echo "✅ OpenCode web server stopped"
-          fi
-
-  cleanup:
-    name: 🧹 Cleanup
-    needs: [autonomous_work]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Runner Status
-        run: |
-          echo "Session completed with status: ${{ needs.autonomous_work.result }}"
+          if [ -f /tmp/cloudflared.pid ]; then kill $(cat /tmp/cloudflared.pid) 2>/dev/null || true; fi
+          if [ -f /tmp/opencode-web.pid ]; then kill $(cat /tmp/opencode-web.pid) 2>/dev/null || true; fi

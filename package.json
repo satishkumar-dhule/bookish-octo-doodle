@@ -1,12 +1,12 @@
 {
   "name": "autonomous-dev-system",
   "version": "1.0.0",
-  "description": "AI-powered autonomous development system with GitHub Actions and OpenCode CLI",
+  "description": "Pure OpenCode AI autonomous development system - No LangGraph dependencies",
   "type": "module",
   "scripts": {
-    "start": "node scripts/orchestrator-with-failover.js",
+    "start": "node scripts/orchestrator-opencode.js",
+    "start:legacy": "node scripts/orchestrator-with-failover.js",
     "start:simple": "node scripts/orchestrator.js",
-    "start:langgraph": "node scripts/orchestrator-langgraph.js",
     "bootstrap": "node scripts/bootstrap.js",
     "idea": "node scripts/create-idea.js",
     "idea:interactive": "node scripts/create-idea.js --interactive",
@@ -26,9 +26,6 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {
-    "@langchain/core": "^0.3.30",
-    "@langchain/langgraph": "^0.2.29"
-  },
+  "dependencies": {},
   "devDependencies": {}
 }
