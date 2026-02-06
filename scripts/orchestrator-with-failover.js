@@ -638,7 +638,12 @@ async function main() {
 
     let finalState = initialState;
 
-    for await (const step of await graph.stream(initialState)) {
+    // LangGraph requires a thread_id in config for checkpoint management
+    const config = {
+      configurable: { thread_id: initialState.sessionId }
+    };
+
+    for await (const step of await graph.stream(initialState, config)) {
       const [, nodeState] = Object.entries(step)[0];
       finalState = { ...finalState, ...nodeState };
       currentState = finalState;
