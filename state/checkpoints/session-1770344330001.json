@@ -1,0 +1,112 @@
+{
+  "sessionId": "session-1770344330001",
+  "ideaId": "005",
+  "ideaContent": "# Error Handling Utilities: Centralized Helpers\n\n## Description\nBuild a centralized error handling library that standardizes error creation, wrapping, normalization, and responses across the app stack. It should provide a reusable ApiError structure, helper utilities to wrap and normalize errors, a mapping to HTTP status codes, a sanitized error response formatter, and a logging adapter with redaction.\n\n## Context\nCurrently errors are scattered across modules with inconsistent shapes, which makes debugging harder, reduces observability, and risks leaking sensitive data. Centralizing error handling improves consistency, testability, and security, and lowers duplication when adding new services or APIs.\n\n## Acceptance Criteria\n- [ ] A central ApiError type with fields code, message, details optional, and cause optional is defined and used by new utilities\n- [ ] wrapError and normalizeError utilities preserve original stack traces and produce a standard error shape\n- [ ] HTTP status mapping and client safe error response formatter produce consistent JSON error bodies without leaking sensitive data\n- [ ] A logging adapter standardizes error logs and redacts sensitive fields, with integration hooks for common frameworks\n- [ ] Unit tests cover core utilities and error response formatting, achieving acceptable coverage\n\n## Technical Notes\nOrganize under errors/ with an ApiError type. Implement: interface ApiError { code: string; message: string; details?: any; cause?: Error | string; stack?: string } ; class ExtendedError extends Error { code; details; cause } ; functions: wrapError(err, code, message, details?), normalizeError(err): ApiError, toHttpStatus(err): number, formatErrorResponse(err, options?): ApiErrorResponse; logger: logError(err, context) that redacts sensitive fields; middleware: errorHandler for Express and Koa; provide tests and CI coverage. Ensure no stack traces leaked in production; enable verbose traces in dev. Consider integration with Express, NestJS, GraphQL, and serverless runtimes.\n\n## Priority\nHigh\n\n## Estimated Complexity\nMedium\n\n## Labels\nfeature, backend, error-handling\n\n---\n\n**Created:** 2026-02-06\n**ID:** 005\n",
+  "startedAt": "2026-02-06T02:18:50.004Z",
+  "phase": "planning",
+  "plan": {
+    "milestones": [
+      {
+        "name": "Analyze requirements",
+        "description": "Review and understand the requirements",
+        "files": {
+          "create": [],
+          "modify": [],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [],
+        "rollback": "No changes yet"
+      },
+      {
+        "name": "Implement changes",
+        "description": "Make the necessary code changes",
+        "files": {
+          "create": [],
+          "modify": [],
+          "delete": []
+        },
+        "dependencies": [],
+        "tests": [],
+        "rollback": "Revert commits"
+      }
+    ],
+    "risks": [
+      "AI planner unavailable - using template"
+    ],
+    "success_criteria": [
+      "Changes implemented",
+      "Tests pass"
+    ],
+    "estimated_time_minutes": 30,
+    "confidence": 0.5
+  },
+  "currentMilestone": 0,
+  "totalMilestones": 3,
+  "milestones": [],
+  "agentOutputs": {
+    "analysis": {
+      "milestones": [
+        {
+          "name": "Analyze requirements",
+          "description": "Review and understand the requirements",
+          "files": {
+            "create": [],
+            "modify": [],
+            "delete": []
+          },
+          "dependencies": [],
+          "tests": [],
+          "rollback": "No changes yet"
+        },
+        {
+          "name": "Implement changes",
+          "description": "Make the necessary code changes",
+          "files": {
+            "create": [],
+            "modify": [],
+            "delete": []
+          },
+          "dependencies": [],
+          "tests": [],
+          "rollback": "Revert commits"
+        }
+      ],
+      "risks": [
+        "AI planner unavailable - using template"
+      ],
+      "success_criteria": [
+        "Changes implemented",
+        "Tests pass"
+      ],
+      "estimated_time_minutes": 30,
+      "confidence": 0.5
+    }
+  },
+  "parallelResults": [],
+  "modifiedFiles": [],
+  "conflicts": [],
+  "testResults": null,
+  "testPassed": false,
+  "reviewIssues": [],
+  "codeQuality": 0,
+  "errors": [],
+  "retryCount": 0,
+  "maxRetries": 3,
+  "lastError": null,
+  "needsUserInput": false,
+  "userQuestion": null,
+  "blockingIssue": null,
+  "progress": 0,
+  "status": "pending",
+  "lastCheckpoint": null,
+  "rollbackPoint": null,
+  "executionTime": 0,
+  "timeoutAt": 1770345710001,
+  "resourceUsage": {
+    "memory": 0,
+    "cpu": 0
+  },
+  "degradedMode": true,
+  "partialSuccess": false
+}
